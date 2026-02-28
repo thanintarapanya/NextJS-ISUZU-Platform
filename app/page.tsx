@@ -15,6 +15,7 @@ const DirectorGraph = dynamic(() => import('@/components/DirectorGraph'), { ssr:
 const Settings = dynamic(() => import('@/components/Settings'), { ssr: false });
 const FileAndVideo = dynamic(() => import('@/components/FileAndVideo'), { ssr: false });
 const LiveStream = dynamic(() => import('@/components/LiveStream'), { ssr: false });
+const Administration = dynamic(() => import('@/components/Administration'), { ssr: false });
 
 // Define initial layout here to persist across tab changes
 const DEFAULT_TELEMETRY_LAYOUT = [
@@ -86,6 +87,8 @@ const App: React.FC = () => {
         return <FileAndVideo files={files} setFiles={setFiles} />;
       case View.LIVE:
         return <LiveStream cars={cars} drivers={drivers} />;
+      case View.ADMINISTRATION:
+        return <Administration cars={cars} setCars={setCars} drivers={drivers} setDrivers={setDrivers} />;
       case View.SETTINGS:
         return <Settings cars={cars} setCars={setCars} drivers={drivers} setDrivers={setDrivers} />;
       default:

@@ -6,7 +6,8 @@ export enum View {
   CHAT = 'CHAT',
   FILES = 'FILES',
   LIVE = 'LIVE',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  ADMINISTRATION = 'ADMINISTRATION'
 }
 
 export interface TelemetryPoint {

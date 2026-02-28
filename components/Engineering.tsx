@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import MapWidget from './MapWidget';
 import { ResponsiveContainer, LineChart, Line, YAxis, XAxis, Tooltip, ScatterChart, Scatter, CartesianGrid, AreaChart, Area } from 'recharts';
 import { Responsive } from 'react-grid-layout';
 import * as ReactGridLayout from 'react-grid-layout';
@@ -420,10 +421,7 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
 
   // Map & Circuit Settings
   const [circuitName, setCircuitName] = useState('Buriram International Circuit');
-  const [isMapSettingsOpen, setIsMapSettingsOpen] = useState(false);
-  const trackPathRef = useRef<SVGPathElement>(null);
-  const [carMapPos, setCarMapPos] = useState({ x: 100, y: 300 });
-  const [rivalPositions, setRivalPositions] = useState<{id: number, x: number, y: number, color: string, name: string}[]>([]);
+  // Removed unused Map state and refs
 
   const CAR_CLASSES = [
     { name: 'Mercedes', color: '#06b6d4' }, // Cyan (RUS)
@@ -551,41 +549,7 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
     return () => clearInterval(interval);
   }, [isPaused, activeRacerId]);
 
-  // Track Map Correlation Logic
-  useEffect(() => {
-      if (trackPathRef.current && history[playbackIndex]) {
-          const path = trackPathRef.current;
-          const totalLength = path.getTotalLength();
-          
-          // Use Data-Driven Lap Progress for accurate correlation
-          const currentData = history[playbackIndex];
-          const lapProg = currentData.lapProgress || 0;
-          
-          // Map 0-100 to 0-1
-          const progress = (lapProg % 100) / 100;
-          
-          // Ensure progress is valid
-          const clampedProgress = Math.max(0, Math.min(1, progress));
-          
-          const point = path.getPointAtLength(clampedProgress * totalLength);
-          setCarMapPos({ x: point.x, y: point.y });
-
-          // Calculate Rival Positions
-          const newRivalPositions = rivals.map(rival => {
-              // Offset progress
-              const rivalProg = (clampedProgress + rival.offset) % 1;
-              const rivalPoint = path.getPointAtLength(rivalProg * totalLength);
-              return {
-                  id: rival.id,
-                  x: rivalPoint.x,
-                  y: rivalPoint.y,
-                  color: rival.color,
-                  name: rival.name
-              };
-          });
-          setRivalPositions(newRivalPositions);
-      }
-  }, [playbackIndex, history, rivals]);
+  // Map tracking logic moved to MapWidget
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
@@ -700,21 +664,7 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
       }
   };
   
-  // Track Map Turns Configuration (Buriram International Circuit)
-  const TRACK_TURNS = [
-      { id: '1', x: 180, y: 80 },
-      { id: '2', x: 500, y: 120 },
-      { id: '3', x: 750, y: 150 },
-      { id: '4', x: 300, y: 180 },
-      { id: '5', x: 180, y: 280 },
-      { id: '6', x: 250, y: 320 },
-      { id: '7', x: 320, y: 280 },
-      { id: '8', x: 550, y: 280 },
-      { id: '9', x: 600, y: 380 },
-      { id: '10', x: 450, y: 340 },
-      { id: '11', x: 350, y: 380 },
-      { id: '12', x: 120, y: 380 },
-  ];
+  // TRACK_TURNS moved to MapWidget
 
   const renderWidgetContent = (type: WidgetType) => {
       switch(type) {
@@ -844,149 +794,24 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                 </div>
               );
           case 'MAP':
-              const activeFlagTurn = activeFlag ? TRACK_TURNS.find(t => t.id === activeFlag.turn) : null;
+              // Calculate progress for MapWidget
+              const currentLapProgress = (history[playbackIndex]?.lapProgress || 0) % 100;
+              const mainCarProgress = currentLapProgress / 100;
               
+              const mapRivals = rivals.map(rival => ({
+                  id: rival.id,
+                  name: rival.name,
+                  color: rival.color,
+                  progress: (mainCarProgress + rival.offset) % 1
+              }));
+
               return (
-                <div className="glass-panel p-0 rounded-xl h-full flex flex-col relative overflow-hidden bg-[#080808]">
-                    <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-                        <div className="bg-black/80 backdrop-blur px-2 py-1 rounded border border-white/10 flex items-center gap-2">
-                            <MapIcon className="w-3 h-3 text-zinc-400" />
-                            <span className="text-[10px] text-zinc-300 uppercase font-bold tracking-wider">LIVE TRACKER</span>
-                        </div>
-                        <button 
-                            onClick={() => setIsMapSettingsOpen(!isMapSettingsOpen)} 
-                            className="text-zinc-500 hover:text-white transition-colors bg-black/50 p-1 rounded"
-                        >
-                            <Settings className="w-3 h-3" />
-                        </button>
-                    </div>
-
-                    {/* Circuit Name */}
-                    <div className="absolute top-4 right-4 z-20 bg-black/80 backdrop-blur px-2 py-1 rounded border border-white/10">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wide">
-                            {circuitName}
-                        </span>
-                    </div>
-
-                    {/* Map Settings Overlay */}
-                    {isMapSettingsOpen && (
-                        <div className="absolute top-12 left-4 z-30 bg-black/90 border border-white/20 p-3 rounded-lg w-48 shadow-xl animate-in fade-in slide-in-from-top-2">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase">Settings</span>
-                                <button onClick={() => setIsMapSettingsOpen(false)}><X className="w-3 h-3 text-zinc-500 hover:text-white" /></button>
-                            </div>
-                            <input 
-                                type="text"
-                                value={circuitName}
-                                onChange={(e) => setCircuitName(e.target.value)}
-                                className="w-full bg-zinc-800 border border-white/10 rounded px-2 py-1 text-xs text-white mb-2 focus:border-isuzu-red outline-none"
-                                placeholder="Circuit Name"
-                            />
-                        </div>
-                    )}
-                    
-                    {/* Active Flag Alert Banner */}
-                    {activeFlag && (
-                         <div 
-                            onClick={() => setActiveFlag(null)} 
-                            className="absolute bottom-4 right-4 z-20 flex items-center gap-2 bg-black/80 border border-yellow-500/50 px-3 py-1.5 rounded animate-pulse cursor-pointer hover:bg-black/90 transition-all"
-                            title="Click to clear flag"
-                         >
-                              <Flag className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                              <div className="flex flex-col">
-                                   <span className="text-[9px] text-yellow-500 font-bold uppercase leading-none">SECTOR 3</span>
-                                   <span className="text-[9px] text-white font-bold uppercase leading-none mt-0.5">YELLOW FLAG {activeFlag.turn}</span>
-                              </div>
-                         </div>
-                    )}
-
-                    <div className="flex-1 w-full relative overflow-hidden flex items-center justify-center bg-transparent">
-                        {/* Background Texture/Grid */}
-                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                        
-                        <svg viewBox="0 0 800 450" className="w-full h-full p-4 select-none scale-110">
-                            <defs>
-                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="4" result="blur" />
-                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                                <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stopColor="#cbd5e1" />
-                                    <stop offset="100%" stopColor="#94a3b8" />
-                                </linearGradient>
-                            </defs>
-
-                            {/* Track Path - Border */}
-                            <path 
-                                d="M 100 300 L 140 100 Q 150 60 200 70 L 720 140 Q 780 150 740 190 L 350 160 Q 300 160 250 200 L 200 250 Q 160 280 200 310 Q 220 330 250 300 Q 280 270 320 280 L 520 280 Q 560 280 580 320 Q 600 380 540 380 Q 500 380 480 350 Q 460 320 400 360 L 150 380 Q 80 380 100 300 Z"
-                                className="stroke-black/80 stroke-[16px] fill-none" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                            />
-
-                            {/* Track Path - Main Surface */}
-                            <path 
-                                ref={trackPathRef}
-                                d="M 100 300 L 140 100 Q 150 60 200 70 L 720 140 Q 780 150 740 190 L 350 160 Q 300 160 250 200 L 200 250 Q 160 280 200 310 Q 220 330 250 300 Q 280 270 320 280 L 520 280 Q 560 280 580 320 Q 600 380 540 380 Q 500 380 480 350 Q 460 320 400 360 L 150 380 Q 80 380 100 300 Z"
-                                className="stroke-slate-300 stroke-[6px] fill-none" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                                filter="url(#glow)"
-                            />
-                            
-                            {/* Track Centerline */}
-                            <path 
-                                d="M 100 300 L 140 100 Q 150 60 200 70 L 720 140 Q 780 150 740 190 L 350 160 Q 300 160 250 200 L 200 250 Q 160 280 200 310 Q 220 330 250 300 Q 280 270 320 280 L 520 280 Q 560 280 580 320 Q 600 380 540 380 Q 500 380 480 350 Q 460 320 400 360 L 150 380 Q 80 380 100 300 Z"
-                                className="stroke-white stroke-[1px] fill-none opacity-50" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                                strokeDasharray="10 10"
-                            />
-                            
-                            {/* Turn Numbers */}
-                            {TRACK_TURNS.map((turn) => (
-                                <g key={turn.id}>
-                                    <circle cx={turn.x} cy={turn.y} r="8" className="fill-black stroke-white stroke-1" />
-                                    <text x={turn.x} y={turn.y} dy="3" textAnchor="middle" className="fill-white text-[9px] font-bold font-mono select-none">{turn.id}</text>
-                                </g>
-                            ))}
-                            
-                            {/* Flag Popup */}
-                            {activeFlagTurn && (
-                                <g transform={`translate(${activeFlagTurn.x}, ${activeFlagTurn.y - 25})`}>
-                                    <path d="M0 0 L-8 -10 L8 -10 Z" fill="#EAB308" />
-                                    <rect x="-16" y="-30" width="32" height="20" rx="4" fill="#EAB308" />
-                                    <Flag x="-10" y="-26" width="20" height="12" className="text-black" fill="black" />
-                                </g>
-                            )}
-
-                            {/* Rivals Markers */}
-                            {rivalPositions.map(pos => (
-                                <g key={pos.id} transform={`translate(${pos.x}, ${pos.y})`}>
-                                    {/* Label Box */}
-                                    <g transform="translate(8, -8)">
-                                        <rect x="0" y="0" width="28" height="12" rx="2" fill="black" stroke={pos.color} strokeWidth="1" />
-                                        <text x="14" y="9" textAnchor="middle" className="fill-white text-[8px] font-bold font-mono select-none">{pos.name}</text>
-                                    </g>
-                                    {/* Car Dot */}
-                                    <circle r="4" fill={pos.color} className="stroke-white stroke-1 shadow-lg" />
-                                </g>
-                            ))}
-
-                            {/* Active Car Marker */}
-                            <g 
-                                style={{ transform: `translate(${carMapPos.x}px, ${carMapPos.y}px)` }}
-                                className="transition-transform duration-75 ease-linear"
-                            >
-                                {/* Arrow pointing down */}
-                                <path d="M -12 -35 L 12 -35 L 0 -12 Z" fill="#FF3333" className="animate-bounce-arrow" />
-                                
-                                {/* Car Dot - Bigger */}
-                                <circle r="10" className="fill-white stroke-isuzu-red stroke-[4px]" />
-                            </g>
-                        </svg>
-                    </div>
-                </div>
+                  <MapWidget 
+                      circuitName={circuitName}
+                      activeFlag={activeFlag}
+                      mainCarProgress={mainCarProgress}
+                      rivals={mapRivals}
+                  />
               );
           case 'CONDITIONS':
               return (
@@ -1463,7 +1288,18 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
   };
 
   const handleLayoutChange = (newLayout: any) => {
-      onLayoutChange(newLayout);
+      // Merge new layout (visible items) with hidden items from the previous layout
+      const hiddenLayoutItems = layout.filter(l => hiddenWidgets.includes(l.i));
+      
+      const combinedLayout = [...newLayout];
+      
+      hiddenLayoutItems.forEach(hiddenItem => {
+          if (!combinedLayout.find(l => l.i === hiddenItem.i)) {
+              combinedLayout.push(hiddenItem);
+          }
+      });
+      
+      onLayoutChange(combinedLayout);
   };
 
   // Rec Button Visuals

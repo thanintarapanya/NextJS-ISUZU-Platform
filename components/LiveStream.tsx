@@ -1,19 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Map as MapIcon, Eye, Video, Activity, Flag, AlertTriangle, ChevronDown } from 'lucide-react';
+import MapWidget from './MapWidget';
+import { Eye, Video, Activity, ChevronDown } from 'lucide-react';
 import { Car, Driver } from '../types';
 
-const TRACK_TURNS = [
-    { id: 'T1', x: 60, y: 40 },
-    { id: 'T2', x: 180, y: 50 },
-    { id: 'T3', x: 280, y: 55 },
-    { id: 'T4', x: 280, y: 75 },
-    { id: 'T5', x: 140, y: 70 },
-    { id: 'T6', x: 80, y: 80 },
-    { id: 'T7', x: 90, y: 100 },
-    { id: 'T8', x: 160, y: 90 },
-    { id: 'T9', x: 180, y: 110 },
-    { id: 'T10', x: 130, y: 130 },
-];
+const CAR_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 interface LiveStreamProps {
     cars: Car[];
@@ -24,6 +14,7 @@ const LiveStream: React.FC<LiveStreamProps> = ({ cars, drivers }) => {
     // Simulate an active flag event
     const [activeFlag, setActiveFlag] = useState<{turn: string, type: 'YELLOW' | 'RED' | 'GREEN'} | null>({ turn: 'T3', type: 'YELLOW' });
     const [selectedCarId, setSelectedCarId] = useState<number>(cars[0]?.id || 0);
+    const [progress, setProgress] = useState(0);
 
     const selectedCar = cars.find(c => c.id === selectedCarId);
     const selectedDriver = drivers.find(d => d.carId === selectedCarId);
@@ -40,7 +31,22 @@ const LiveStream: React.FC<LiveStreamProps> = ({ cars, drivers }) => {
         return () => clearInterval(interval);
     }, []);
 
-    const activeTurnData = activeFlag ? TRACK_TURNS.find(t => t.id === activeFlag.turn) : null;
+    // Animate progress
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress(p => (p + 0.0005) % 1);
+        }, 16);
+        return () => clearInterval(interval);
+    }, []);
+
+    const mapRivals = cars
+        .filter(c => c.id !== selectedCarId)
+        .map((car, i) => ({
+            id: car.id,
+            name: drivers.find(d => d.carId === car.id)?.name || `Car ${car.number}`,
+            color: CAR_COLORS[i % CAR_COLORS.length],
+            progress: (progress + 0.1 + (i * 0.08)) % 1
+        }));
 
     return (
         <div className="flex-1 p-6 h-full flex flex-col gap-6 bg-[#050505] overflow-hidden">
@@ -95,95 +101,14 @@ const LiveStream: React.FC<LiveStreamProps> = ({ cars, drivers }) => {
              <div className="flex-1 grid grid-cols-12 gap-6 min-h-[300px]">
                 
                 {/* Box 1: Live Map (4/12 width) */}
-                <div className="col-span-4 glass-panel p-1 rounded-xl border border-white/5 flex flex-col h-full relative overflow-hidden">
-                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                        <MapIcon className="w-4 h-4 text-zinc-400" />
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">TRACKER</span>
-                    </div>
-
-                    {/* Alert Banner Overlay */}
-                    {activeFlag && (
-                        <div className={`absolute top-4 right-4 z-20 px-3 py-1.5 rounded flex items-center gap-2 border animate-pulse shadow-lg ${
-                            activeFlag.type === 'YELLOW' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' :
-                            activeFlag.type === 'RED' ? 'bg-red-500/10 border-red-500 text-red-500' : 
-                            'bg-green-500/10 border-green-500 text-green-500'
-                        }`}>
-                            <Flag className="w-4 h-4 fill-current" />
-                            <div className="flex flex-col leading-none">
-                                <span className="text-[9px] font-bold uppercase">{activeFlag.type} FLAG</span>
-                                <span className="text-[10px] font-black uppercase">SECTOR {activeFlag.turn}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="w-full h-full relative bg-zinc-900/50 rounded-lg overflow-hidden flex items-center justify-center">
-                        <svg viewBox="0 0 320 160" className="w-full h-full stroke-white fill-none stroke-2 p-8">
-                            <defs>
-                                <filter id="neon-glow-live" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                                    <feMerge>
-                                        <feMergeNode in="coloredBlur"/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            
-                            {/* Track Base */}
-                            <path 
-                                id="trackPathLive" 
-                                d="M 60 140 L 60 40 L 180 50 L 280 55 C 295 55 295 75 280 75 L 140 70 L 80 80 L 90 100 L 130 90 L 160 90 L 180 110 L 150 110 L 130 130 L 60 140 Z" 
-                                className="stroke-zinc-700 stroke-[8px] fill-none" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                            />
-                            
-                            {/* Track Highlight/Center */}
-                             <path 
-                                d="M 60 140 L 60 40 L 180 50 L 280 55 C 295 55 295 75 280 75 L 140 70 L 80 80 L 90 100 L 130 90 L 160 90 L 180 110 L 150 110 L 130 130 L 60 140 Z" 
-                                className="stroke-zinc-500 stroke-[1px] fill-none" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                                strokeDasharray="4 4"
-                            />
-
-                            {/* Turn Annotations - UPDATED FONTS */}
-                            {TRACK_TURNS.map((turn) => (
-                                <g key={turn.id}>
-                                    <circle cx={turn.x} cy={turn.y} r="7" className="fill-black/90 stroke-zinc-500 stroke-1" />
-                                    <text x={turn.x} y={turn.y} dy="2.5" textAnchor="middle" className="fill-white text-[7px] font-sans font-bold select-none">
-                                        {turn.id}
-                                    </text>
-                                </g>
-                            ))}
-
-                            {/* Active Flag Popup Annotation */}
-                            {activeFlag && activeTurnData && (
-                                <g transform={`translate(${activeTurnData.x}, ${activeTurnData.y - 12})`}>
-                                    <animateTransform attributeName="transform" type="translate" from={`${activeTurnData.x} ${activeTurnData.y - 12}`} to={`${activeTurnData.x} ${activeTurnData.y - 16}`} dur="1s" repeatCount="indefinite" values={`${activeTurnData.x} ${activeTurnData.y - 12}; ${activeTurnData.x} ${activeTurnData.y - 16}; ${activeTurnData.x} ${activeTurnData.y - 12}`} />
-                                    {/* Triangle Pointer */}
-                                    <path d="M0 8 L-4 0 L4 0 Z" fill={activeFlag.type === 'YELLOW' ? '#EAB308' : activeFlag.type === 'RED' ? '#EF4444' : '#22C55E'} transform="translate(0, 4)" />
-                                    {/* Box */}
-                                    <rect x="-14" y="-14" width="28" height="14" rx="3" fill={activeFlag.type === 'YELLOW' ? '#EAB308' : activeFlag.type === 'RED' ? '#EF4444' : '#22C55E'} />
-                                    {/* Icon */}
-                                    <Flag x="-8" y="-11" width="16" height="8" className="text-black" fill="black" />
-                                </g>
-                            )}
-
-                            {/* Animated Dot for Car */}
-                            <circle r="4" className="fill-isuzu-red stroke-white stroke-1" filter="url(#neon-glow-live)">
-                                <animateMotion 
-                                    dur="15s" 
-                                    repeatCount="indefinite" 
-                                    path="M 60 140 L 60 40 L 180 50 L 280 55 C 295 55 295 75 280 75 L 140 70 L 80 80 L 90 100 L 130 90 L 160 90 L 180 110 L 150 110 L 130 130 L 60 140 Z" 
-                                    rotate="auto"
-                                />
-                            </circle>
-                        </svg>
-                        
-                        <div className="absolute bottom-4 right-4 bg-black/60 px-3 py-1 rounded border border-white/10 text-xs font-mono">
-                            <span className="text-zinc-500">GAP:</span> <span className="text-white">+12.4s</span>
-                        </div>
-                    </div>
+                <div className="col-span-4 h-full">
+                    <MapWidget 
+                        circuitName="Buriram International Circuit"
+                        activeFlag={activeFlag}
+                        mainCarProgress={progress}
+                        rivals={mapRivals}
+                        className="border border-white/5"
+                    />
                 </div>
 
                 {/* Box 2: YouTube Embed (8/12 width) */}

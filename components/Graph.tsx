@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import MapWidget from './MapWidget';
 import { Area, Line, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle, Flag, Zap, Activity, Play, Pause, Siren, Eye, AlertOctagon, ChevronDown, ChevronUp, Filter, Clock, RotateCcw, Trash2, Settings, ArrowUpCircle, ArrowDownCircle, X, Map as MapIcon, ChevronLeft, ChevronRight, GitCompare, Users, ArrowUp, ArrowDown, Droplets, Wind, Gauge, CheckCircle2 } from 'lucide-react';
 import { Car, CarTelemetry } from '../types';
@@ -27,19 +28,6 @@ const INITIAL_METRICS_CONFIG = [
 ];
 
 const COMPARE_COLORS = ['#06b6d4', '#d946ef', '#facc15'];
-
-const TRACK_TURNS = [
-    { id: 'T1', x: 50, y: 40 },
-    { id: 'T2', x: 180, y: 40 },
-    { id: 'T3', x: 290, y: 50 },
-    { id: 'T4', x: 290, y: 80 },
-    { id: 'T5', x: 140, y: 60 },
-    { id: 'T6', x: 80, y: 70 },
-    { id: 'T7', x: 100, y: 110 },
-    { id: 'T8', x: 170, y: 80 },
-    { id: 'T9', x: 190, y: 110 },
-    { id: 'T10', x: 130, y: 140 },
-];
 
 interface Alert {
     id: string;
@@ -182,6 +170,7 @@ const Graph: React.FC<DashboardProps> = ({
               snapshot[`lambda_${c.id}`] = c.lambda;
               snapshot[`airflow_${c.id}`] = c.airflow;
               snapshot[`distance_${c.id}`] = c.distance;
+              snapshot[`lapProgress_${c.id}`] = c.lapProgress || 0;
           });
           const newHistory = [...prev, snapshot].slice(-HISTORY_LENGTH);
           
@@ -666,54 +655,22 @@ const Graph: React.FC<DashboardProps> = ({
                                 <div className="flex items-center gap-2 text-zinc-400">
                                     <MapIcon className="w-4 h-4" />
                                     <span className="text-xs font-bold uppercase tracking-wider">Track Map</span>
-                                    <Settings className="w-3 h-3 text-zinc-600 hover:text-white cursor-pointer" />
-                                </div>
-                                <div className="mr-8 text-[9px] font-bold text-zinc-500 uppercase text-right leading-tight">
-                                    BURIRAM<br/>INTL. CIRCUIT
                                 </div>
                             </div>
                             
-                            <div className="flex-1 w-full relative bg-zinc-900/50 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center mb-4">
-                                <svg viewBox="0 0 320 160" className="w-full h-full stroke-white fill-none stroke-2 p-4">
-                                    {/* Circuit Line */}
-                                    <path 
-                                        d="M 60 140 L 60 40 L 180 50 L 280 55 C 295 55 295 75 280 75 L 140 70 L 80 80 L 90 100 L 130 90 L 160 90 L 180 110 L 150 110 L 130 130 L 60 140 Z" 
-                                        className="stroke-zinc-700 stroke-[10px] fill-none" 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round"
-                                    />
-                                    <path 
-                                        d="M 60 140 L 60 40 L 180 50 L 280 55 C 295 55 295 75 280 75 L 140 70 L 80 80 L 90 100 L 130 90 L 160 90 L 180 110 L 150 110 L 130 130 L 60 140 Z" 
-                                        className="stroke-white/20 stroke-[2px] fill-none" 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        strokeDasharray="4 4"
-                                    />
-                                    
-                                    {/* Turn Numbers */}
-                                    {TRACK_TURNS.map((turn) => (
-                                        <g key={turn.id}>
-                                            <circle cx={turn.x} cy={turn.y} r="6" className="fill-black/80 stroke-zinc-600 stroke-1" />
-                                            <text x={turn.x} y={turn.y} dy="2.5" textAnchor="middle" className="fill-zinc-400 text-[6px] font-bold font-mono select-none">{turn.id}</text>
-                                        </g>
-                                    ))}
-
-                                    {/* Yellow Flag Indicator on Map (T9) */}
-                                    <g transform="translate(190, 95)">
-                                        <path d="M0 0 L-6 -8 L6 -8 Z" fill="#EAB308" />
-                                        <rect x="-12" y="-24" width="24" height="16" rx="2" fill="#EAB308" />
-                                        <Flag x="-8" y="-20" width="16" height="8" className="text-black" fill="black" />
-                                    </g>
-                                </svg>
-                            </div>
-
-                            {/* Bottom Status Box */}
-                            <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/50 px-3 py-2 rounded animate-pulse mt-auto">
-                                <Flag className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] text-yellow-500 font-bold uppercase leading-none">SECTOR 3</span>
-                                    <span className="text-[9px] text-white font-bold uppercase leading-none mt-0.5">YELLOW FLAG T9</span>
-                                </div>
+                            <div className="flex-1 w-full relative rounded-lg overflow-hidden border border-white/5 flex items-center justify-center mb-4">
+                                <MapWidget 
+                                    circuitName="Buriram International Circuit"
+                                    activeFlag={raceStatus === 'GREEN' ? null : { turn: 'T3', type: raceStatus === 'SC' ? 'YELLOW' : raceStatus }}
+                                    mainCarProgress={(currentSnapshot[`lapProgress_${selectedCarIds[0]}`] || 0) / 100}
+                                    rivals={displayCars.filter(c => c.id !== selectedCarIds[0]).map(c => ({
+                                        id: c.id,
+                                        name: c.number,
+                                        color: '#fff',
+                                        progress: (currentSnapshot[`lapProgress_${c.id}`] || 0) / 100
+                                    }))}
+                                    className="h-full border-none bg-transparent"
+                                />
                             </div>
                         </div>
                       )}

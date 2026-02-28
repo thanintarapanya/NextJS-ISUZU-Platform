@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Activity, KanbanSquare, MessageSquare, Settings, LogOut, ChevronLeft, ChevronRight, Menu, FolderOpen, Tv2, Eye } from 'lucide-react';
+import { LayoutDashboard, Activity, KanbanSquare, MessageSquare, Settings, LogOut, ChevronLeft, ChevronRight, Menu, FolderOpen, Tv2, Eye, Crown } from 'lucide-react';
 import { View } from '../types';
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onLogout }
     { view: View.DIRECTOR, icon: Eye, label: 'Director Graph' },
     { view: View.FILES, icon: FolderOpen, label: 'File&Video' },
     { view: View.KANBAN, icon: KanbanSquare, label: 'Task' },
+    { view: View.ADMINISTRATION, icon: Crown, label: 'Administration' },
     { view: View.CHAT, icon: MessageSquare, label: 'Team Comms', disabled: true },
   ];
 

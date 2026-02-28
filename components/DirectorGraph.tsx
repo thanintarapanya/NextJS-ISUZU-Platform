@@ -19,6 +19,7 @@ const generateAllCarsTelemetry = (cars: Car[], tick: number): CarTelemetry[] => 
             lambda: 0.98 + Math.random() * 0.04,
             airflow: Math.max(0, 400 + Math.random() * 50),
             distance: (tick * 50) % 5000,
+            lapProgress: (tick * 5) % 100,
         };
     });
 };
