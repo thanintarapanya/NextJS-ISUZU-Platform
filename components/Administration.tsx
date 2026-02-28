@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Users, Car, Plus, Trash2, Pencil, X, Save, Calendar, MapPin } from 'lucide-react';
+import { Shield, Users, Car, Plus, Trash2, Pencil, X, Save, Calendar, MapPin, LineChart } from 'lucide-react';
 import { Car as CarType, Driver as DriverType } from '../types';
 
 interface AdministrationProps {
@@ -10,12 +10,20 @@ interface AdministrationProps {
 }
 
 const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers, setDrivers }) => {
-    const [activeTab, setActiveTab] = useState<'EVENT' | 'GARAGE'>('EVENT');
+    const [activeTab, setActiveTab] = useState<'EVENT' | 'GARAGE' | 'THRESHOLDS'>('EVENT');
 
     // Event & Track State
     const [eventName, setEventName] = useState('Buriram GT3 Series');
     const [trackName, setTrackName] = useState('Buriram International Circuit');
     const [sessionType, setSessionType] = useState('PRACTICE');
+
+    // Director Graph State
+    const [graphConfig, setGraphConfig] = useState({
+        refreshRate: 10,
+        speed: { max: 300, alertDelay: 2.0, warningPenalty: 5.0 },
+        rpm: { max: 9000, alertDelay: 1.0, warningPenalty: 3.0 },
+        gForce: { max: 5, alertDelay: 1.0, warningPenalty: 2.0 }
+    });
 
     // Mock Users
     const [users, setUsers] = useState([
@@ -67,7 +75,7 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
 
             {/* Tabs */}
             <div className="flex items-center gap-6 border-b border-white/10 mb-8 flex-shrink-0 overflow-x-auto">
-                {['EVENT', 'GARAGE'].map((tab) => (
+                {['EVENT', 'GARAGE', 'THRESHOLDS'].map((tab) => (
                     <button 
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
@@ -346,6 +354,176 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
                                             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-zinc-400 border border-white/5">{u.access}</span>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* THRESHOLDS TAB */}
+                {activeTab === 'THRESHOLDS' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-8">
+                            <div className="glass-panel p-6 rounded-xl space-y-6">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-white/5 rounded-lg">
+                                        <LineChart className="w-6 h-6 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Director Graph Thresholds</h3>
+                                        <p className="text-xs text-zinc-500">Graph scaling, update frequency, and penalties</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Data Refresh Rate</label>
+                                        <div className="flex gap-2 mt-2">
+                                            {[1, 5, 10, 15].map(rate => (
+                                                <button 
+                                                    key={rate}
+                                                    onClick={() => setGraphConfig({...graphConfig, refreshRate: rate})}
+                                                    className={`flex-1 py-2 rounded text-xs font-bold border ${graphConfig.refreshRate === rate ? 'bg-isuzu-red border-isuzu-red text-white' : 'bg-black/30 border-white/10 text-zinc-500 hover:bg-white/5'}`}
+                                                >
+                                                    {rate} Hz
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        {/* Speed Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">Speed Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.speed.max} KPH</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="200" max="400" step="10"
+                                                        value={graphConfig.speed.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, speed: {...graphConfig.speed, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.speed.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, speed: {...graphConfig.speed, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.speed.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, speed: {...graphConfig.speed, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* RPM Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">RPM Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.rpm.max} RPM</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="5000" max="12000" step="500"
+                                                        value={graphConfig.rpm.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, rpm: {...graphConfig.rpm, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.rpm.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, rpm: {...graphConfig.rpm, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.rpm.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, rpm: {...graphConfig.rpm, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* G-Force Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">G-Force Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.gForce.max} G</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="2" max="8" step="0.5"
+                                                        value={graphConfig.gForce.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.gForce.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.gForce.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

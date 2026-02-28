@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, Check, Plus, Gauge, Activity, Settings as SettingsIcon, LineChart, Download } from 'lucide-react';
+import { CreditCard, Check, Plus, Gauge, Activity, Settings as SettingsIcon, Download } from 'lucide-react';
 import { Car as CarType, Driver as DriverType } from '../types';
 
 interface SettingsProps {
@@ -33,13 +33,6 @@ const Settings: React.FC<SettingsProps> = ({ cars, setCars, drivers, setDrivers 
         tireTempHigh: 100,
         fuelLow: 5
     });
-    // Director Graph State
-    const [graphThresholds, setGraphThresholds] = useState({
-        speedMax: 300,
-        rpmMax: 9000,
-        gForceMax: 5
-    });
-    const [refreshRate, setRefreshRate] = useState(10);
 
     return (
         <div className="flex-1 p-8 h-full overflow-y-auto flex flex-col">
@@ -277,79 +270,6 @@ const Settings: React.FC<SettingsProps> = ({ cars, setCars, drivers, setDrivers 
                                             onChange={(e) => setThresholds({...thresholds, fuelLow: Number(e.target.value)})}
                                             className="w-full accent-isuzu-red h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
                                         />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-8">
-                            <div className="glass-panel p-6 rounded-xl space-y-6">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-white/5 rounded-lg">
-                                        <LineChart className="w-6 h-6 text-blue-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white">Director Graph Thresholds</h3>
-                                        <p className="text-xs text-zinc-500">Graph scaling and update frequency</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Data Refresh Rate</label>
-                                        <div className="flex gap-2 mt-2">
-                                            {[1, 5, 10, 15].map(rate => (
-                                                <button 
-                                                    key={rate}
-                                                    onClick={() => setRefreshRate(rate)}
-                                                    className={`flex-1 py-2 rounded text-xs font-bold border ${refreshRate === rate ? 'bg-isuzu-red border-isuzu-red text-white' : 'bg-black/30 border-white/10 text-zinc-500 hover:bg-white/5'}`}
-                                                >
-                                                    {rate} Hz
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-[10px] uppercase font-bold text-zinc-500">Speed Graph Max</label>
-                                                <span className="text-xs font-mono text-blue-400">{graphThresholds.speedMax} KPH</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="200" max="400" step="10"
-                                                value={graphThresholds.speedMax}
-                                                onChange={(e) => setGraphThresholds({...graphThresholds, speedMax: Number(e.target.value)})}
-                                                className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                                            />
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-[10px] uppercase font-bold text-zinc-500">RPM Graph Max</label>
-                                                <span className="text-xs font-mono text-blue-400">{graphThresholds.rpmMax} RPM</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="5000" max="12000" step="500"
-                                                value={graphThresholds.rpmMax}
-                                                onChange={(e) => setGraphThresholds({...graphThresholds, rpmMax: Number(e.target.value)})}
-                                                className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                                            />
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-[10px] uppercase font-bold text-zinc-500">G-Force Graph Max</label>
-                                                <span className="text-xs font-mono text-blue-400">{graphThresholds.gForceMax} G</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="2" max="8" step="0.5"
-                                                value={graphThresholds.gForceMax}
-                                                onChange={(e) => setGraphThresholds({...graphThresholds, gForceMax: Number(e.target.value)})}
-                                                className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                                            />
-                                        </div>
                                     </div>
                                 </div>
                             </div>
