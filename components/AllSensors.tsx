@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Database, Car as CarIcon, LayoutGrid, Check, ChevronDown, Wifi, WifiOff } from 'lucide-react';
+// Force sync
+import { AlertTriangle, Database, Car as CarIcon, LayoutGrid, Check, ChevronDown, Wifi } from 'lucide-react';
 import { Responsive } from 'react-grid-layout';
 import * as ReactGridLayout from 'react-grid-layout';
 import { Car, Driver } from '../types';
-import { useTelemetrySocket } from '../hooks/useTelemetrySocket';
 
 const WidthProvider = (ReactGridLayout as any).WidthProvider;
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -18,10 +18,6 @@ const AllSensors: React.FC<DashboardProps> = ({ cars, drivers }) => {
   
   const activeCar = cars.find(c => c.id === activeCarId);
   const activeDriver = drivers.find(d => d.carId === activeCarId);
-
-  // Use WebSocket data
-  const { history, isConnected } = useTelemetrySocket();
-  const currentData = history[history.length - 1] || {};
   
   // Sensor Tabs State
   const [activeSensorTab, setActiveSensorTab] = useState('POWERTRAIN');
@@ -46,31 +42,31 @@ const AllSensors: React.FC<DashboardProps> = ({ cars, drivers }) => {
 
   const sensors = {
       'POWERTRAIN': [
-          { name: 'Engine Oil Pressure', status: 'ok', value: `${(currentData.oilPressure || 4.2).toFixed(1)} bar` },
-          { name: 'Fuel Flow Rate', status: 'ok', value: `${(currentData.fuelFlow || 98).toFixed(1)} kg/h` },
-          { name: 'Turbo Boost', status: (currentData.turboBoost || 0) > 2.5 ? 'warn' : 'ok', value: `${(currentData.turboBoost || 1.5).toFixed(1)} bar` },
-          { name: 'Gearbox Temp', status: (currentData.gearboxTemp || 0) > 120 ? 'warn' : 'ok', value: `${(currentData.gearboxTemp || 115).toFixed(0)}°C` },
-          { name: 'Exhaust Gas Temp', status: 'ok', value: `${(currentData.exhaustTemp || 850).toFixed(0)}°C` },
-          { name: 'Coolant Temp', status: 'ok', value: `${(currentData.waterTemp || 92).toFixed(0)}°C` },
+          { name: 'Engine Oil Pressure', status: 'ok', value: '4.2 bar' },
+          { name: 'Fuel Flow Rate', status: 'ok', value: '98 kg/h' },
+          { name: 'Turbo Boost', status: 'warn', value: '2.8 bar' },
+          { name: 'Gearbox Temp', status: 'ok', value: '115°C' },
+          { name: 'Exhaust Gas Temp', status: 'ok', value: '850°C' },
+          { name: 'Coolant Temp', status: 'ok', value: '92°C' },
       ],
       'CHASSIS': [
-          { name: 'FL Suspension Travel', status: 'ok', value: `${(currentData.suspensionFL || 120).toFixed(0)}mm` },
-          { name: 'FR Suspension Travel', status: 'ok', value: `${(currentData.suspensionFR || 118).toFixed(0)}mm` },
-          { name: 'Brake Line Pressure', status: 'ok', value: `${(currentData.brakePressure || 0).toFixed(1)} bar` },
-          { name: 'Steering Angle', status: 'ok', value: `${(currentData.steering || 0).toFixed(1)}°` },
+          { name: 'FL Suspension Travel', status: 'ok', value: '120mm' },
+          { name: 'FR Suspension Travel', status: 'ok', value: '118mm' },
+          { name: 'Brake Line Pressure', status: 'ok', value: '0 bar' },
+          { name: 'Steering Angle', status: 'ok', value: '-2.4°' },
           { name: 'Tire Pressure Monitor', status: 'ok', value: 'Active' },
       ],
       'AERO': [
-          { name: 'Front Wing Load', status: 'ok', value: `${(currentData.frontWingLoad || 3200).toFixed(0)} N` },
-          { name: 'Rear Wing Load', status: 'ok', value: `${(currentData.rearWingLoad || 4500).toFixed(0)} N` },
+          { name: 'Front Wing Load', status: 'ok', value: '3200 N' },
+          { name: 'Rear Wing Load', status: 'ok', value: '4500 N' },
           { name: 'Underbody Airflow', status: 'calib', value: 'Acquiring' },
-          { name: 'Drag Reduction System', status: 'ok', value: currentData.drsStatus || 'Closed' },
+          { name: 'Drag Reduction System', status: 'ok', value: 'Closed' },
       ],
       'ELECTRONICS': [
           { name: 'ECU Status', status: 'ok', value: 'Map 4' },
           { name: 'Telemetry Link', status: 'ok', value: '5G - 24ms' },
-          { name: 'GPS Signal', status: 'ok', value: `${currentData.gpsSats || 12} Sats` },
-          { name: 'Battery Voltage', status: (currentData.batteryVoltage || 0) < 12 ? 'warn' : 'ok', value: `${(currentData.batteryVoltage || 12.4).toFixed(1)} V` },
+          { name: 'GPS Signal', status: 'ok', value: '12 Sats' },
+          { name: 'Battery Voltage', status: 'warn', value: '12.4 V' },
           { name: 'Hybrid Deployment', status: 'ok', value: 'Ready' },
       ]
   };
@@ -273,7 +269,7 @@ const AllSensors: React.FC<DashboardProps> = ({ cars, drivers }) => {
                 <div className="glass-panel p-4 rounded-xl flex flex-col h-full w-full space-y-4">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-white/5 rounded-lg">
-                            {isConnected ? <Wifi className="w-5 h-5 text-green-500" /> : <WifiOff className="w-5 h-5 text-red-500" />}
+                            <Wifi className="w-5 h-5 text-green-500" />
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-white">Connection</h3>
@@ -284,9 +280,9 @@ const AllSensors: React.FC<DashboardProps> = ({ cars, drivers }) => {
                     <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
                             <span className="text-xs text-zinc-400">Status</span>
-                            <span className={`text-xs font-bold flex items-center gap-1 ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
-                                <div className={`w-2 h-2 rounded-full animate-pulse ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                {isConnected ? 'Connected' : 'Disconnected'}
+                            <span className="text-xs font-bold text-green-500 flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                Connected
                             </span>
                         </div>
                         <div>
