@@ -4,7 +4,6 @@ import { Responsive } from 'react-grid-layout';
 import * as ReactGridLayout from 'react-grid-layout';
 import { Cloud, Flag, Activity, Play, Pause, RotateCcw, Wind, Droplets, Gauge, Thermometer, ArrowUp, ArrowDown, Zap, Map as MapIcon, Trophy, Upload, BarChart2, TrendingUp, Maximize2, ExternalLink, X, Eye, EyeOff, Video, AlertTriangle, Compass, GripHorizontal, LayoutGrid, Check, Disc, Monitor, GaugeCircle, Save, Folder, Settings, Square, Plus, ChevronDown } from 'lucide-react';
 import { Car, Driver, FileItem, CarTelemetry } from '../types';
-import { useTelemetrySocket } from '../hooks/useTelemetrySocket';
 
 const WidthProvider = (ReactGridLayout as any).WidthProvider;
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -14,6 +13,91 @@ const getTimestamp = (offsetSeconds: number) => {
     const d = new Date();
     d.setSeconds(d.getSeconds() - offsetSeconds);
     return d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+// Comprehensive Data Generator
+const generateHistory = (count: number) => {
+    const data = [];
+    const now = Date.now();
+    for (let i = count; i > 0; i--) {
+        const timeOffset = i * 0.04; // 25Hz = 0.04s per step
+        
+        // Simulating physics for G-Force
+        const steering = Math.sin(timeOffset * 0.8) * 90;
+        const speed = 180 + Math.sin(timeOffset * 0.3) * 60 + (Math.random() * 2);
+        const throttle = Math.max(0, Math.cos(timeOffset * 0.5) * 100);
+        const brake = Math.max(0, -Math.cos(timeOffset * 0.5) * 80);
+
+        // Simple mock physics for Gs
+        // Lat G relates to steering angle * speed (simplified)
+        const gLat = (steering / 90) * (speed / 100) * 1.5 + (Math.random() * 0.1 - 0.05);
+        // Long G relates to throttle (+) and brake (-)
+        const gLong = (throttle / 100) * 0.8 - (brake / 100) * 1.2 + (Math.random() * 0.1 - 0.05);
+        
+        // Heading (0-360) simulating a track loop
+        const heading = (Math.abs(Math.sin(timeOffset * 0.1)) * 360);
+
+        data.push({
+            timestamp: getTimestamp(timeOffset),
+            originalTime: now - (timeOffset * 1000),
+            // Biometrics - smoothed with sine waves + small noise
+            heartRate: 130 + Math.sin(timeOffset * 0.5) * 10 + (Math.random() * 2),
+            breath: 16 + Math.sin(timeOffset * 0.8) * 2 + (Math.random() * 0.5),
+            stress: 50 + Math.sin(timeOffset * 0.2) * 15 + (Math.random() * 2),
+            
+            // Sync Data
+            lapProgress: (timeOffset * 2) % 100,
+            
+            // Control Inputs (Smooth Physics)
+            steering, 
+            throttle,
+            brake,
+            
+            // Dynamics
+            gLat,
+            gLong,
+            heading,
+
+            // Engine
+            rpm: 4000 + Math.abs(Math.sin(timeOffset * 1.5)) * 3000 + (Math.random() * 100),
+            speed, // Added speed
+            oilTemp: 110 + Math.sin(timeOffset * 0.1) * 5,
+            fuel: Math.max(0, 100 - (timeOffset * 0.05)), // Fuel consumption simulation
+            lambda: 0.98 + Math.random() * 0.04, // Lambda sensor data
+            boost: 1.5 + Math.sin(timeOffset * 0.5) * 0.5, // Turbo Boost (bar)
+            
+            // Environment
+            airTemp: 38 + Math.random() * 0.1,
+            windSpeed: 12 + Math.sin(timeOffset * 0.05) * 5, // km/h
+            windDir: 'NE',
+            humidity: 75 + Math.random() * 0.5,
+            pressure: 1013 + Math.sin(timeOffset * 0.01) * 2,
+            
+            // Tires (Temp & Pressure)
+            flTemp: 104 + Math.sin(timeOffset * 0.1) * 5,
+            frTemp: 105 + Math.cos(timeOffset * 0.12) * 5,
+            rlTemp: 113 + Math.sin(timeOffset * 0.15) * 4,
+            rrTemp: 115 + Math.cos(timeOffset * 0.18) * 4,
+            
+            flPress: 1.2 + Math.random() * 0.01,
+            frPress: 1.1 + Math.random() * 0.01,
+            rlPress: 1.2 + Math.random() * 0.01,
+            rrPress: 1.3 + Math.random() * 0.01,
+
+            // Tire Speeds (km/h) - slightly different per wheel to simulate slip/cornering
+            flSpeed: speed * (1 + (Math.sin(timeOffset * 0.8) * 0.02)),
+            frSpeed: speed * (1 - (Math.sin(timeOffset * 0.8) * 0.02)),
+            rlSpeed: speed * (1 + (Math.sin(timeOffset * 0.8) * 0.05)), // Rear slip
+            rrSpeed: speed * (1 - (Math.sin(timeOffset * 0.8) * 0.05)),
+
+            // Brakes
+            flBrake: 650 + Math.cos(timeOffset * 0.3) * 200,
+            frBrake: 500 + Math.cos(timeOffset * 0.3) * 150,
+            rlBrake: 765 + Math.cos(timeOffset * 0.3) * 100,
+            rrBrake: 725 + Math.cos(timeOffset * 0.3) * 120,
+        });
+    }
+    return data;
 };
 
 interface TelemetryProps {
@@ -322,9 +406,10 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
   const [gapSortMode, setGapSortMode] = useState<'NEAREST' | 'RANKING'>('RANKING');
   
   // Data State
+  const [history, setHistory] = useState<any[]>(generateHistory(120)); 
   const [isPaused, setIsPaused] = useState(false);
-  const { history } = useTelemetrySocket(isPaused);
-  const [playbackIndex, setPlaybackIndex] = useState<number>(0);
+  const [playbackIndex, setPlaybackIndex] = useState<number>(119); 
+  const tickRef = useRef(0);
   const [graphType, setGraphType] = useState<'line' | 'scatter'>('line');
   const [maximizedSection, setMaximizedSection] = useState<string | null>(null);
   
@@ -401,13 +486,70 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
       { id: 'correlation', type: 'CORRELATION', title: 'Speed/RPM' }, 
       { id: 'gap_time', type: 'GAP_TIME', title: 'Gap Time' }, // New Widget
   ];
-  
-  // Sync playback index with live history
+
+  // Simulation Loop
   useEffect(() => {
-      if (!isPaused && history.length > 0) {
-          setPlaybackIndex(history.length - 1);
-      }
-  }, [history, isPaused]);
+    const interval = setInterval(() => {
+        if (!isPaused) {
+            setHistory(prev => {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                tickRef.current += 0.01;
+                const t = tickRef.current;
+                
+                const lastPoint = prev[prev.length - 1];
+                
+                // Simulating physics for G-Force
+                const steering = Math.sin(t * 0.8) * 90;
+                const speed = 180 + Math.sin(t * 0.3) * 60 + (Math.random() * 2);
+                const throttle = Math.max(0, Math.cos(t * 0.5) * 100);
+                const brake = Math.max(0, -Math.cos(t * 0.5) * 80);
+
+                const gLat = (steering / 90) * (speed / 100) * 1.5 + (Math.random() * 0.1 - 0.05);
+                const gLong = (throttle / 100) * 0.8 - (brake / 100) * 1.2 + (Math.random() * 0.1 - 0.05);
+                const heading = (Math.abs(Math.sin(t * 0.1)) * 360);
+
+                const newPoint = {
+                    timestamp: timeString,
+                    originalTime: Date.now(),
+                    heartRate: 135 + Math.sin(t * 0.5) * 10 + (Math.random() * 2),
+                    breath: 16 + Math.sin(t * 0.8) * 2 + (Math.random() * 0.5),
+                    stress: 50 + Math.sin(t * 0.2) * 15 + (Math.random() * 2),
+                    lapProgress: (lastPoint.lapProgress + 0.05) % 100, 
+                    steering, 
+                    throttle,
+                    brake,
+                    gLat,
+                    gLong,
+                    heading,
+                    rpm: 4000 + Math.abs(Math.sin(t * 1.5)) * 3000 + (Math.random() * 100),
+                    speed,
+                    oilTemp: 110 + Math.sin(t * 0.1) * 5,
+                    lambda: 0.98 + Math.sin(t * 0.2) * 0.03 + (Math.random() * 0.01),
+                    airTemp: 38.5 + (Math.sin(t * 0.05) * 0.5),
+                    humidity: 75 + Math.sin(t * 0.1) * 2,
+                    windSpeed: 12 + Math.sin(t * 0.05) * 5,
+                    pressure: 1013 + Math.sin(t * 0.01) * 1,
+                    windDir: 'NE',
+                    fuel: Math.max(0, lastPoint.fuel ? lastPoint.fuel - 0.005 : 98),
+                    flTemp: 104 + Math.sin(t * 0.1) * 5,
+                    frTemp: 105 + Math.cos(t * 0.12) * 5,
+                    rlTemp: 113 + Math.sin(t * 0.15) * 4,
+                    rrTemp: 115 + Math.cos(t * 0.18) * 4,
+                    flPress: 1.2, frPress: 1.1, rlPress: 1.2, rrPress: 1.3,
+                    flBrake: Math.max(200, 650 + Math.sin(t*0.5)*300),
+                    frBrake: Math.max(200, 500 + Math.sin(t*0.55)*250),
+                    rlBrake: Math.max(200, 765 + Math.sin(t*0.45)*200),
+                    rrBrake: Math.max(200, 725 + Math.sin(t*0.48)*200),
+                };
+                const newHistory = [...prev, newPoint].slice(-600);
+                setPlaybackIndex(newHistory.length - 1); 
+                return newHistory;
+            });
+        }
+    }, 10);
+    return () => clearInterval(interval);
+  }, [isPaused, activeRacerId]);
 
   // Track Map Correlation Logic
   useEffect(() => {
