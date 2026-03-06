@@ -79,6 +79,9 @@ export interface CarTelemetry {
     speed: number;
     rpm: number;
     fuelFlow: number;
+    fuelPressure: number;
+    throttle: number;
+    ignitionTiming: number;
     lambda: number;
     airflow: number;
     distance: number;

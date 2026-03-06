@@ -15,17 +15,20 @@ interface DashboardProps {
 
 // --- CONSTANTS & TYPES ---
 const MAX_CARS = 30;
-const HISTORY_LENGTH = 300; // Keep last 300 ticks (30 seconds)
-const VISIBLE_WINDOW = 60; // How many points to show in graph
+const HISTORY_LENGTH = 600; // Increased to accommodate 1 min window at high frequency
 
 // Initial definition, now used to seed state
-const INITIAL_METRICS_CONFIG = [
+const AVAILABLE_METRICS = [
     { key: 'speed', label: 'Speed', unit: 'km/h', min: 0, max: 350, defaultThreshold: 310, color: '#ec4899', icon: Zap },
-    { key: 'fuelFlow', label: 'Fuel Flow', unit: 'kg/h', min: 0, max: 120, defaultThreshold: 100, color: '#ef4444', icon: Droplets },
+    { key: 'rpm', label: 'RPM', unit: 'RPM', min: 0, max: 15000, defaultThreshold: 12500, color: '#3b82f6', icon: Gauge },
+    { key: 'throttle', label: 'Throttle', unit: '%', min: 0, max: 100, defaultThreshold: 95, color: '#a855f7', icon: Zap },
+    { key: 'fuelPressure', label: 'Fuel Pressure', unit: 'bar', min: 0, max: 10, defaultThreshold: 6, color: '#f97316', icon: Droplets },
+    { key: 'ignitionTiming', label: 'Ignition Timing', unit: '°', min: -10, max: 50, defaultThreshold: 40, color: '#06b6d4', icon: Activity },
     { key: 'lambda', label: 'Lambda', unit: 'λ', min: 0.7, max: 1.3, defaultThreshold: 0.95, color: '#eab308', icon: Activity },
     { key: 'airflow', label: 'Airflow', unit: 'g/s', min: 0, max: 500, defaultThreshold: 450, color: '#22c55e', icon: Wind },
-    { key: 'rpm', label: 'RPM', unit: 'RPM', min: 0, max: 15000, defaultThreshold: 12500, color: '#3b82f6', icon: Gauge },
 ];
+
+const INITIAL_METRICS_CONFIG = AVAILABLE_METRICS.slice(0, 5);
 
 const COMPARE_COLORS = ['#06b6d4', '#d946ef', '#facc15'];
 
@@ -42,6 +45,7 @@ interface Alert {
 }
 
 interface MetricSetting {
+    id: string;
     key: string;
     label: string;
     unit: string;
@@ -51,7 +55,7 @@ interface MetricSetting {
     icon: any;
     threshold: number;
     alertDelay: number; // Seconds
-    refreshRate: number; // Hz
+    penaltyThreshold: number; // Number of warnings before penalty
 }
 
 const Graph: React.FC<DashboardProps> = ({ 
@@ -68,13 +72,17 @@ const Graph: React.FC<DashboardProps> = ({
   
   // Metrics State (Allows reordering and settings updates)
   const [metrics, setMetrics] = useState<MetricSetting[]>(() => 
-      INITIAL_METRICS_CONFIG.map(m => ({
+      INITIAL_METRICS_CONFIG.map((m, i) => ({
           ...m,
+          id: `metric-slot-${i}`,
           threshold: m.defaultThreshold,
           alertDelay: 0, // Default 0s delay
-          refreshRate: 10 // Default 10Hz
+          penaltyThreshold: 3 // Default 3 warnings
       }))
   );
+
+  const [visibleWindow, setVisibleWindow] = useState(60); // Default 60 points (6s at 10Hz, but let's map to user request)
+  // User wants 10s, 30s, 1min. Assuming 10Hz, that's 100, 300, 600 points.
   
   const [isCompareMode, setIsCompareMode] = useState(false);
 
@@ -167,6 +175,9 @@ const Graph: React.FC<DashboardProps> = ({
               snapshot[`rpm_${c.id}`] = c.rpm;
               snapshot[`speed_${c.id}`] = c.speed;
               snapshot[`fuelFlow_${c.id}`] = c.fuelFlow;
+              snapshot[`fuelPressure_${c.id}`] = c.fuelPressure;
+              snapshot[`throttle_${c.id}`] = c.throttle;
+              snapshot[`ignitionTiming_${c.id}`] = c.ignitionTiming;
               snapshot[`lambda_${c.id}`] = c.lambda;
               snapshot[`airflow_${c.id}`] = c.airflow;
               snapshot[`distance_${c.id}`] = c.distance;
@@ -186,6 +197,21 @@ const Graph: React.FC<DashboardProps> = ({
   // --- HANDLERS ---
   const handleMetricUpdate = (key: string, field: keyof MetricSetting, value: any) => {
       setMetrics(prev => prev.map(m => m.key === key ? { ...m, [field]: value } : m));
+  };
+
+  const changeMetricType = (index: number, newMetricKey: string) => {
+      const newConfig = AVAILABLE_METRICS.find(m => m.key === newMetricKey);
+      if (!newConfig) return;
+
+      setMetrics(prev => {
+          const newMetrics = [...prev];
+          newMetrics[index] = {
+              ...prev[index], // Preserve the slot ID
+              ...newConfig,
+              threshold: newConfig.defaultThreshold,
+          };
+          return newMetrics;
+      });
   };
 
   const moveMetric = (index: number, direction: 'up' | 'down') => {
@@ -259,7 +285,7 @@ const Graph: React.FC<DashboardProps> = ({
 
   // --- DERIVED STATE FOR RENDERING ---
   const currentSnapshot = history[playbackIndex] || {};
-  const graphData = history.slice(Math.max(0, playbackIndex - VISIBLE_WINDOW), playbackIndex + 1);
+  const graphData = history.slice(Math.max(0, playbackIndex - visibleWindow), playbackIndex + 1);
 
   const displayCars = telemetryData.map(car => {
       // Re-evaluate status based on CURRENT settings for display purposes
@@ -317,12 +343,30 @@ const Graph: React.FC<DashboardProps> = ({
 
           {/* --- SECTION 1: CAR STATUS BAR --- */}
           <div className="h-14 flex-shrink-0 glass-panel border border-white/10 rounded-xl flex items-center px-4 gap-4 bg-zinc-900/50">
-              {/* ... existing car status bar content ... */}
               <div className="flex flex-col justify-center border-r border-white/10 pr-4">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Grid Status</span>
                   <div className="flex items-center gap-2">
                       <span className="text-xl font-black text-white">{MAX_CARS}</span>
                       <span className="text-xs text-zinc-400">Cars Active</span>
+                  </div>
+              </div>
+
+              <div className="flex items-center gap-2 border-r border-white/10 pr-4">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mr-2">Window</span>
+                  <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
+                      {[
+                          { label: '10S', value: 100 },
+                          { label: '30S', value: 300 },
+                          { label: '1M', value: 600 }
+                      ].map(opt => (
+                          <button
+                              key={opt.label}
+                              onClick={() => setVisibleWindow(opt.value)}
+                              className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${visibleWindow === opt.value ? 'bg-isuzu-red text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                          >
+                              {opt.label}
+                          </button>
+                      ))}
                   </div>
               </div>
               
@@ -363,7 +407,7 @@ const Graph: React.FC<DashboardProps> = ({
                       const isSettingsOpen = openSettingsKey === metric.key;
 
                       return (
-                      <div key={metric.key} className={`glass-panel px-3 py-2 rounded-xl border border-white/5 bg-zinc-900/20 flex flex-col flex-1 min-h-0 relative group ${isSettingsOpen ? 'z-[60]' : 'z-auto'}`}>
+                      <div key={metric.id} className={`glass-panel px-3 py-2 rounded-xl border border-white/5 bg-zinc-900/20 flex flex-col flex-1 min-h-0 relative group ${isSettingsOpen ? 'z-[60]' : 'z-auto'}`}>
                           
                           {/* Settings Popover */}
                           {isSettingsOpen && (
@@ -401,15 +445,15 @@ const Graph: React.FC<DashboardProps> = ({
                                               </div>
                                           </div>
                                           <div>
-                                              <label className="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Refresh Rate</label>
+                                              <label className="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Penalty Times</label>
                                               <div className="flex items-center gap-1">
                                                   <input 
                                                       type="number" 
-                                                      value={metric.refreshRate} 
-                                                      onChange={(e) => handleMetricUpdate(metric.key, 'refreshRate', Number(e.target.value))}
+                                                      value={metric.penaltyThreshold} 
+                                                      onChange={(e) => handleMetricUpdate(metric.key, 'penaltyThreshold', Number(e.target.value))}
                                                       className="w-full bg-zinc-900 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-isuzu-red outline-none"
                                                   />
-                                                  <span className="text-[10px] text-zinc-500">Hz</span>
+                                                  <span className="text-[10px] text-zinc-500">x</span>
                                               </div>
                                           </div>
                                       </div>
@@ -437,9 +481,20 @@ const Graph: React.FC<DashboardProps> = ({
                           {/* Header Line */}
                           <div className="flex justify-between items-center mb-1 px-1 flex-shrink-0">
                               <div className="flex items-center gap-3">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 relative group/select">
                                       <Icon className="w-3 h-3" style={{ color: metric.color }} />
-                                      <h3 className="text-xs font-bold text-white uppercase tracking-wider">{metric.label}</h3>
+                                      <div className="relative">
+                                          <select 
+                                              value={metric.key}
+                                              onChange={(e) => changeMetricType(index, e.target.value)}
+                                              className="appearance-none bg-transparent text-xs font-bold text-white uppercase tracking-wider pr-4 outline-none cursor-pointer hover:text-isuzu-red transition-colors"
+                                          >
+                                              {AVAILABLE_METRICS.map(m => (
+                                                  <option key={m.key} value={m.key} className="bg-zinc-900 text-white">{m.label}</option>
+                                              ))}
+                                          </select>
+                                          <ChevronDown className="w-3 h-3 text-zinc-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                      </div>
                                   </div>
                                   <div className="flex items-center gap-2 text-[10px] text-zinc-500 border-l border-white/10 pl-2">
                                       <span>LIMIT: <span className="text-zinc-300 font-mono">{metric.threshold}</span> {metric.unit}</span>

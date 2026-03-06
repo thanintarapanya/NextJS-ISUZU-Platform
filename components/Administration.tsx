@@ -22,7 +22,11 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
         refreshRate: 10,
         speed: { max: 300, alertDelay: 2.0, warningPenalty: 5.0 },
         rpm: { max: 9000, alertDelay: 1.0, warningPenalty: 3.0 },
-        gForce: { max: 5, alertDelay: 1.0, warningPenalty: 2.0 }
+        fuelPressure: { max: 10, alertDelay: 1.0, warningPenalty: 3.0 },
+        throttle: { max: 100, alertDelay: 1.0, warningPenalty: 3.0 },
+        ignitionTiming: { max: 50, alertDelay: 1.0, warningPenalty: 3.0 },
+        lambda: { max: 1.3, alertDelay: 1.0, warningPenalty: 3.0 },
+        airflow: { max: 500, alertDelay: 1.0, warningPenalty: 3.0 }
     });
 
     // Mock Users
@@ -480,11 +484,11 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
                                             </div>
                                         </div>
 
-                                        {/* G-Force Config */}
+                                        {/* Fuel Pressure Config */}
                                         <div className="p-4 bg-white/5 rounded-lg border border-white/5">
                                             <div className="flex justify-between items-center mb-4">
-                                                <h4 className="text-sm font-bold text-white">G-Force Configuration</h4>
-                                                <span className="text-xs font-mono text-blue-400">{graphConfig.gForce.max} G</span>
+                                                <h4 className="text-sm font-bold text-white">Fuel Pressure Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.fuelPressure.max} BAR</span>
                                             </div>
                                             <div className="space-y-4">
                                                 <div>
@@ -493,9 +497,9 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
                                                     </div>
                                                     <input 
                                                         type="range" 
-                                                        min="2" max="8" step="0.5"
-                                                        value={graphConfig.gForce.max}
-                                                        onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, max: Number(e.target.value)}})}
+                                                        min="5" max="20" step="1"
+                                                        value={graphConfig.fuelPressure.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, fuelPressure: {...graphConfig.fuelPressure, max: Number(e.target.value)}})}
                                                         className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
                                                     />
                                                 </div>
@@ -505,8 +509,8 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
                                                         <input 
                                                             type="number" 
                                                             step="0.1"
-                                                            value={graphConfig.gForce.alertDelay}
-                                                            onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, alertDelay: Number(e.target.value)}})}
+                                                            value={graphConfig.fuelPressure.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, fuelPressure: {...graphConfig.fuelPressure, alertDelay: Number(e.target.value)}})}
                                                             className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
                                                         />
                                                     </div>
@@ -515,8 +519,184 @@ const Administration: React.FC<AdministrationProps> = ({ cars, setCars, drivers,
                                                         <input 
                                                             type="number" 
                                                             step="0.5"
-                                                            value={graphConfig.gForce.warningPenalty}
-                                                            onChange={(e) => setGraphConfig({...graphConfig, gForce: {...graphConfig.gForce, warningPenalty: Number(e.target.value)}})}
+                                                            value={graphConfig.fuelPressure.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, fuelPressure: {...graphConfig.fuelPressure, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Throttle Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">Throttle Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.throttle.max} %</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="50" max="100" step="5"
+                                                        value={graphConfig.throttle.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, throttle: {...graphConfig.throttle, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.throttle.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, throttle: {...graphConfig.throttle, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.throttle.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, throttle: {...graphConfig.throttle, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Ignition Timing Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">Ignition Timing Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.ignitionTiming.max} °</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="20" max="60" step="2"
+                                                        value={graphConfig.ignitionTiming.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, ignitionTiming: {...graphConfig.ignitionTiming, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.ignitionTiming.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, ignitionTiming: {...graphConfig.ignitionTiming, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.ignitionTiming.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, ignitionTiming: {...graphConfig.ignitionTiming, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Lambda Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">Lambda Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.lambda.max} λ</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="1.0" max="1.5" step="0.05"
+                                                        value={graphConfig.lambda.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, lambda: {...graphConfig.lambda, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.lambda.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, lambda: {...graphConfig.lambda, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.lambda.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, lambda: {...graphConfig.lambda, warningPenalty: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Airflow Config */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-sm font-bold text-white">Airflow Configuration</h4>
+                                                <span className="text-xs font-mono text-blue-400">{graphConfig.airflow.max} g/s</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500">Graph Max</label>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="300" max="600" step="20"
+                                                        value={graphConfig.airflow.max}
+                                                        onChange={(e) => setGraphConfig({...graphConfig, airflow: {...graphConfig.airflow, max: Number(e.target.value)}})}
+                                                        className="w-full accent-blue-500 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Alert Delay (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.1"
+                                                            value={graphConfig.airflow.alertDelay}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, airflow: {...graphConfig.airflow, alertDelay: Number(e.target.value)}})}
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Penalty Time (s)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            value={graphConfig.airflow.warningPenalty}
+                                                            onChange={(e) => setGraphConfig({...graphConfig, airflow: {...graphConfig.airflow, warningPenalty: Number(e.target.value)}})}
                                                             className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
                                                         />
                                                     </div>
