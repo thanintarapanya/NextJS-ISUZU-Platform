@@ -81,7 +81,7 @@ const Graph: React.FC<DashboardProps> = ({
       }))
   );
 
-  const [visibleWindow, setVisibleWindow] = useState(60); // Default 60 points (6s at 10Hz, but let's map to user request)
+  const [visibleWindow, setVisibleWindow] = useState(50); // Default 50 points (5s at 10Hz)
   // User wants 10s, 30s, 1min. Assuming 10Hz, that's 100, 300, 600 points.
   
   const [isCompareMode, setIsCompareMode] = useState(false);
@@ -355,6 +355,7 @@ const Graph: React.FC<DashboardProps> = ({
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mr-2">Window</span>
                   <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
                       {[
+                          { label: '5S', value: 50 },
                           { label: '10S', value: 100 },
                           { label: '30S', value: 300 },
                           { label: '1M', value: 600 }

@@ -122,11 +122,11 @@ const App: React.FC = () => {
 
       const interval = setInterval(() => {
           if (!isPaused) {
-              tickRef.current += 0.01;
+              tickRef.current += 0.1;
               const t = tickRef.current;
               setAllCarsTelemetry(generateAllCarsTelemetry(cars, t));
           }
-      }, 10);
+      }, 100);
       return () => clearInterval(interval);
   }, [cars, isPaused]);
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Shield, Play, Pause, RotateCcw, Search, AlertTriangle, Zap, Gauge, Activity, Wind, Droplets, ArrowDownWideNarrow, ArrowUpWideNarrow, SortAsc, SortDesc } from 'lucide-react';
+import { Shield, Play, Pause, RotateCcw, Search, AlertTriangle, Zap, Gauge, Activity, Wind, Droplets, ArrowDownWideNarrow, ArrowUpWideNarrow, SortAsc, SortDesc, ChevronDown, ChevronUp } from 'lucide-react';
 import { Car, Driver, FileItem, CarTelemetry, Thresholds } from '../types';
 
 interface TelemetryProps {
@@ -264,52 +264,60 @@ const Overview: React.FC<TelemetryProps> = ({ cars: initialCars, drivers, teleme
         <div className="h-full flex flex-col p-4 bg-zinc-950 text-white overflow-hidden">
             
             {/* Header Area */}
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-xl lg:text-2xl font-light text-white tracking-tight flex items-center gap-2">
-                        <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-isuzu-red" />
-                        Investigation Unit
-                    </h2>
-                    <div className="h-4 w-[1px] bg-white/10"></div>
-                    <span className="text-xs lg:text-sm text-zinc-500 font-mono uppercase">{suspects} ANOMALIES • {totalViolations} VIOLATIONS</span>
+                    <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <Shield className="w-6 h-6 text-red-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Investigation Unit</h1>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">{suspects} ANOMALIES</span>
+                            <span className="text-zinc-700">•</span>
+                            <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">{totalViolations} VIOLATIONS</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     
                     {/* Sort Controls */}
-                    <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-white/10 mr-2">
+                    <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-lg border border-white/10">
                          <button 
                             onClick={toggleViolationSort}
-                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors ${sortConfig.key === 'VIOLATION' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-bold uppercase transition-all ${sortConfig.key === 'VIOLATION' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
                          >
                              <AlertTriangle className="w-3 h-3" /> 
                              Violations 
-                             {sortConfig.key === 'VIOLATION' && (sortConfig.order === 'DESC' ? <ArrowDownWideNarrow className="w-3 h-3" /> : <ArrowUpWideNarrow className="w-3 h-3" />)}
+                             {sortConfig.key === 'VIOLATION' && (sortConfig.order === 'DESC' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />)}
                          </button>
-                         <div className="w-[1px] h-4 bg-white/5"></div>
                          <button 
                             onClick={toggleNumberSort}
-                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors ${sortConfig.key === 'NUMBER' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-bold uppercase transition-all ${sortConfig.key === 'NUMBER' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
                          >
                              <span className="text-[10px] font-black italic">#</span> 
                              Car No.
-                             {sortConfig.key === 'NUMBER' && (sortConfig.order === 'DESC' ? <SortDesc className="w-3 h-3" /> : <SortAsc className="w-3 h-3" />)}
+                             {sortConfig.key === 'NUMBER' && (sortConfig.order === 'DESC' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />)}
                          </button>
                     </div>
 
                     <div className="relative">
-                        <Search className="absolute left-2 top-1.5 w-3 h-3 lg:top-2.5 lg:w-4 lg:h-4 text-zinc-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                         <input 
                             type="text" 
                             placeholder="Search..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-32 lg:w-48 bg-zinc-900 border border-white/10 rounded pl-7 pr-2 py-1 lg:py-1.5 lg:pl-9 lg:text-sm text-xs text-white focus:border-isuzu-red outline-none"
+                            className="bg-zinc-900/50 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs text-white focus:border-isuzu-red outline-none w-48 transition-all"
                         />
                     </div>
-                    
-                    <button onClick={handleReset} className="p-1.5 hover:bg-white/10 rounded text-zinc-400 hover:text-white transition-colors border border-white/10 bg-zinc-900" title="Reset Statistics">
-                        <RotateCcw className="w-3 h-3 lg:w-4 lg:h-4" />
+
+                    <button 
+                        onClick={handleReset}
+                        className="p-2 bg-zinc-900/50 border border-white/10 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
+                        title="Reset Session Stats"
+                    >
+                        <RotateCcw className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -342,7 +350,7 @@ const Overview: React.FC<TelemetryProps> = ({ cars: initialCars, drivers, teleme
                         </div>
 
                         {/* RIGHT: Stats Grid (75% width) */}
-                        <div className="flex-1 grid grid-cols-[1.5fr_1fr] gap-x-2 gap-y-[0.5px] p-1.5 items-center">
+                        <div className="flex-1 grid grid-cols-[1fr_45px] gap-x-2 gap-y-[0.5px] p-1.5 items-center">
                             
                             {/* Row 1: Fuel Pressure */}
                             <DataRow label="FPR" max={car.stats.fuelPressure.max} min={car.stats.fuelPressure.min} icon={Droplets} isFloat />
@@ -383,12 +391,12 @@ const Overview: React.FC<TelemetryProps> = ({ cars: initialCars, drivers, teleme
 // --- Sub Components ---
 
 const DataRow = ({ label, max, min, icon: Icon, isFloat }: { label: string, max: number, min: number, icon: any, isFloat?: boolean }) => (
-    <div className="flex items-center justify-between overflow-hidden">
-        <div className="flex items-center gap-1.5 min-w-0">
+    <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex items-center gap-1.5 w-10 lg:w-12 flex-shrink-0">
             <Icon className="w-2.5 h-2.5 lg:w-3.5 lg:h-3.5 text-zinc-600" />
             <span className="text-[9px] lg:text-[10px] 2xl:text-xs font-bold text-zinc-500">{label}</span>
         </div>
-        <div className="flex items-baseline gap-1">
+        <div className="flex-1 flex items-baseline justify-end gap-1">
              <span className="text-[10px] lg:text-xs 2xl:text-sm font-mono text-white leading-none">{isFloat ? max.toFixed(1) : Math.round(max)}</span>
              <span className="text-[8px] lg:text-[10px] text-zinc-700">/</span>
              <span className="text-[9px] lg:text-[10px] 2xl:text-xs font-mono text-zinc-500 leading-none">{isFloat ? min.toFixed(1) : Math.round(min)}</span>
@@ -397,9 +405,9 @@ const DataRow = ({ label, max, min, icon: Icon, isFloat }: { label: string, max:
 );
 
 const StreakRow = ({ count }: { count: number }) => (
-    <div className={`flex items-center justify-center h-[12px] lg:h-[14px] 2xl:h-[16px] rounded-sm ${count > 0 ? 'bg-yellow-500/10' : 'bg-white/5'}`}>
+    <div className={`flex items-center justify-center h-[12px] lg:h-[14px] 2xl:h-[16px] rounded-sm transition-colors ${count > 0 ? 'bg-yellow-500' : 'bg-white/5'}`}>
         {count > 0 ? (
-            <span className="text-[9px] lg:text-[10px] 2xl:text-xs font-black text-yellow-500 leading-none">{count}</span>
+            <span className="text-[9px] lg:text-[10px] 2xl:text-xs font-black text-black leading-none">{count}</span>
         ) : (
             <span className="text-[8px] lg:text-[9px] text-zinc-700">-</span>
         )}
