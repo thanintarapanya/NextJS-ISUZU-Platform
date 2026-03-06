@@ -198,34 +198,29 @@ const TireHUD = ({ position, side, temp, pressure, brakeTemp, tempColor = "bg-or
       return (
         <div className={`absolute ${isRight ? 'text-left -right-[20px] md:-right-[140px]' : 'text-right -left-[20px] md:-left-[140px]'} w-[100px] md:w-[140px] top-1/2 -translate-y-1/2 pointer-events-none`}>
             <div className="text-zinc-400 text-[10px] font-bold mb-1 md:mb-2 tracking-wider">{position} TIRE</div>
-            {speed !== undefined && (
-                <div className={`flex items-center gap-2 mb-1 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
-                    <span className="text-isuzu-red text-xs md:text-sm font-bold tracking-tighter">{Math.round(speed)}</span>
-                    <span className="text-zinc-600 text-[8px] md:text-[10px] uppercase">km/h</span>
-                </div>
-            )}
             <div className={`flex items-center gap-2 mb-1 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
-                <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm ${tempColor}`}></div>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-white text-lg md:text-2xl font-light tracking-tighter">{Math.round(temp)}°</span>
-                    <span className="text-zinc-500 text-[10px] md:text-sm">c</span>
-                </div>
+                <span className="text-zinc-600 text-[8px] md:text-[10px] uppercase">km/h</span>
+                <span className="text-isuzu-red text-xs md:text-sm font-bold tracking-tighter">{Math.round(speed)}</span>
             </div>
-            <div className={`flex items-center gap-2 mb-3 md:mb-4 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
-                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm bg-green-500"></div>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-white text-base md:text-xl font-light tracking-tighter">{pressure.toFixed(1)}</span>
-                    <span className="text-zinc-500 text-[9px] md:text-xs">bar</span>
-                </div>
+        <div className={`flex items-center gap-2 mb-1 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
+            <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm ${tempColor}`}></div>
+            <div className="flex items-baseline gap-1">
+                <span className="text-white text-lg md:text-2xl font-light tracking-tighter">N/A</span>
             </div>
-            <div className="text-zinc-400 text-[10px] font-bold mb-1 md:mb-2 tracking-wider border-t border-white/10 pt-2">{position} BRAKES</div>
-            <div className={`flex items-center gap-2 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
-                <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm ${brakeColor}`}></div>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-white text-base md:text-xl font-light tracking-tighter">{Math.round(brakeTemp)}°</span>
-                    <span className="text-zinc-500 text-[10px] md:text-sm">c</span>
-                </div>
+        </div>
+        <div className={`flex items-center gap-2 mb-3 md:mb-4 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
+            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm bg-green-500"></div>
+            <div className="flex items-baseline gap-1">
+                <span className="text-white text-base md:text-xl font-light tracking-tighter">N/A</span>
             </div>
+        </div>
+        <div className="text-zinc-400 text-[10px] font-bold mb-1 md:mb-2 tracking-wider border-t border-white/10 pt-2">{position} BRAKES</div>
+        <div className={`flex items-center gap-2 ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
+            <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-sm ${brakeColor}`}></div>
+            <div className="flex items-baseline gap-1">
+                <span className="text-white text-base md:text-xl font-light tracking-tighter">N/A</span>
+            </div>
+        </div>
         </div>
       );
 };
@@ -540,6 +535,10 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                     frBrake: Math.max(200, 500 + Math.sin(t*0.55)*250),
                     rlBrake: Math.max(200, 765 + Math.sin(t*0.45)*200),
                     rrBrake: Math.max(200, 725 + Math.sin(t*0.48)*200),
+                    flSpeed: speed * (1 + (Math.sin(t * 0.8) * 0.02)),
+                    frSpeed: speed * (1 - (Math.sin(t * 0.8) * 0.02)),
+                    rlSpeed: speed * (1 + (Math.sin(t * 0.8) * 0.05)),
+                    rrSpeed: speed * (1 - (Math.sin(t * 0.8) * 0.05)),
                 };
                 const newHistory = [...prev, newPoint].slice(-600);
                 setPlaybackIndex(newHistory.length - 1); 
@@ -961,19 +960,39 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                         </div>
                     </div>
 
-                    {/* Bottom Overlay: Fuel & Oil */}
-                    <div className="absolute bottom-6 left-0 w-full flex justify-center gap-12 z-30 pointer-events-none">
-                         <div className="flex flex-col items-center gap-1 bg-black/40 backdrop-blur px-3 py-1.5 rounded-lg border border-white/5">
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
-                                <Thermometer className="w-3 h-3" /> OIL TEMP
+                    {/* Right Side Data Column: Fuel, Oil, Lambda, Boost, DRS */}
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40 pointer-events-none">
+                         <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 w-20">
+                            <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                                <Thermometer className="w-3 h-3" /> OIL
                             </div>
-                            <div className="text-xl font-light text-white leading-none">{Math.round(getVal('oilTemp'))}°</div>
+                            <div className="text-xs font-bold text-white leading-none">{Math.round(getVal('oilTemp'))}°</div>
                          </div>
-                         <div className="flex flex-col items-center gap-1 bg-black/40 backdrop-blur px-3 py-1.5 rounded-lg border border-white/5">
-                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                         <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 w-20">
+                            <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
                                 <GaugeCircle className="w-3 h-3" /> FUEL
                             </div>
-                            <div className="text-xl font-light text-white leading-none">{Math.round(getVal('fuel'))}%</div>
+                            <div className="text-xs font-bold text-white leading-none">{Math.round(getVal('fuel'))}%</div>
+                         </div>
+                         <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 w-20">
+                            <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                                <Activity className="w-3 h-3" /> LAMBDA
+                            </div>
+                            <div className="text-xs font-bold text-white leading-none">{getVal('lambda').toFixed(3)}</div>
+                         </div>
+                         <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 w-20">
+                            <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                                <Zap className="w-3 h-3" /> BOOST
+                            </div>
+                            <div className="text-xs font-bold text-white leading-none">{getVal('boost').toFixed(1)}<span className="text-[7px] ml-0.5 text-zinc-500">BAR</span></div>
+                         </div>
+                         <div className="flex flex-col items-center gap-1 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 w-20">
+                            <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                                <Wind className="w-3 h-3" /> DRS
+                            </div>
+                            <div className={`text-xs font-black leading-none ${getVal('throttle') > 90 ? 'text-blue-400' : 'text-zinc-600'}`}>
+                                {getVal('throttle') > 90 ? 'OPEN' : 'OFF'}
+                            </div>
                          </div>
                     </div>
 
@@ -998,41 +1017,7 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                         <div className="absolute bottom-[25%] right-0 z-40"><TireHUD position="RR" side="right" temp={getVal('rrTemp')} pressure={getVal('rrPress')} brakeTemp={getVal('rrBrake')} tempColor="bg-red-500" brakeColor="bg-orange-500" speed={getVal('rrSpeed')} /></div>
                     </div>
                     
-                    {/* Right Side Data */}
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-40">
-                        {/* Lambda Sensor Data */}
-                        <div className="bg-black/60 backdrop-blur border border-white/10 p-3 rounded-lg w-32">
-                             <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider mb-1">Lambda Sensor</div>
-                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${getVal('lambda') > 1.05 || getVal('lambda') < 0.95 ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
-                                <span className="text-sm font-mono font-medium text-white">
-                                    λ {getVal('lambda').toFixed(3)}
-                                </span>
-                             </div>
-                        </div>
-
-                        {/* Boost Sensor Data */}
-                        <div className="bg-black/60 backdrop-blur border border-white/10 p-3 rounded-lg w-32">
-                             <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider mb-1">Boost Pressure</div>
-                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${getVal('boost') > 2.0 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
-                                <span className="text-sm font-mono font-medium text-white">
-                                    {getVal('boost').toFixed(1)} bar
-                                </span>
-                             </div>
-                        </div>
-
-                        {/* DRS */}
-                        <div className="bg-black/60 backdrop-blur border border-white/10 p-3 rounded-lg w-32">
-                             <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider mb-1">DRS Status</div>
-                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${getVal('throttle') > 90 ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-zinc-600'}`}></div>
-                                <span className={`text-sm font-mono font-medium ${getVal('throttle') > 90 ? 'text-blue-400' : 'text-zinc-500'}`}>
-                                    {getVal('throttle') > 90 ? 'OPEN' : 'CLOSED'}
-                                </span>
-                             </div>
-                        </div>
-                    </div>
+                    {/* Right Side Data Column */}
                 </div>
               );
           }
