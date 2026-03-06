@@ -404,7 +404,8 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
 
   const [activeRacerId, setActiveRacerId] = useState<number>(activeRacers[0]?.id || 0);
   const [selectedLap, setSelectedLap] = useState<number>(16);
-  const [gapSortMode, setGapSortMode] = useState<'NEAREST' | 'RANKING'>('RANKING');
+  const [rivalInput, setRivalInput] = useState<string>('');
+  const [rivalList, setRivalList] = useState<string[]>([]);
   
   // Data State
   const [history, setHistory] = useState<any[]>(generateHistory(120)); 
@@ -1187,6 +1188,8 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
               );
           case 'GAP_TIME':
               // Calculate gaps for all rivals
+              const activeCar = activeRacers.find(r => r.id === activeRacerId);
+              
               const rivalData = rivals.map((rival, idx) => {
                   // Generate a deterministic gap based on rival ID and playback
                   const rawGap = Math.sin(playbackIndex * 0.05 + rival.id * 0.1 + selectedLap) * 5 + (idx * 0.2);
@@ -1198,13 +1201,18 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                   };
               });
 
-              // Sort based on mode
-              const sortedRivals = [...rivalData].sort((a, b) => {
-                  if (gapSortMode === 'NEAREST') {
-                      return Math.abs(a.gap) - Math.abs(b.gap);
+              // Add rival to list
+              const handleAddRival = () => {
+                  if (rivalInput && !rivalList.includes(rivalInput)) {
+                      setRivalList(prev => [...prev, rivalInput]);
+                      setRivalInput('');
                   }
-                  return a.id - b.id; // Default ranking by ID
-              });
+              };
+
+              // Remove rival from list
+              const handleRemoveRival = (num: string) => {
+                  setRivalList(prev => prev.filter(r => r !== num));
+              };
 
               return (
                   <div className="glass-panel p-3 rounded-xl h-full flex flex-col relative overflow-hidden bg-[#080808] border border-white/5">
@@ -1213,8 +1221,8 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                               <Activity className="w-3 h-3 text-zinc-500" /> GAP ANALYSIS
                           </span>
                           
-                          {/* Global Lap Selector */}
-                          <div className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-0.5 border border-white/5">
+                          {/* Global Lap Selector - Moved left to avoid overlap */}
+                          <div className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-0.5 border border-white/5 mr-8">
                               <span className="text-[8px] font-mono text-zinc-500 uppercase">LAP</span>
                               <select 
                                   className="bg-transparent text-[10px] font-bold text-white outline-none cursor-pointer appearance-none text-right w-8"
@@ -1228,48 +1236,88 @@ const Engineering: React.FC<TelemetryProps> = ({ cars, drivers, setFiles, layout
                           </div>
                       </div>
 
-                      {/* Sorting Controls */}
-                      <div className="flex gap-1 mb-2 border-b border-white/10 pb-2">
-                          <button 
-                              onClick={() => setGapSortMode('RANKING')}
-                              className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-colors ${gapSortMode === 'RANKING' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:bg-white/5'}`}
-                          >
-                              Ranking
-                          </button>
-                          <button 
-                              onClick={() => setGapSortMode('NEAREST')}
-                              className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-colors ${gapSortMode === 'NEAREST' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:bg-white/5'}`}
-                          >
-                              Nearest
-                          </button>
+                      {/* Rival Input Control */}
+                      <div className="flex flex-col gap-1 mb-2 border-b border-white/10 pb-2">
+                          <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Compare with Rival #</label>
+                          <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                  <input 
+                                      type="text"
+                                      placeholder="Enter Car #"
+                                      value={rivalInput}
+                                      onChange={(e) => setRivalInput(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleAddRival()}
+                                      className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-isuzu-red transition-all"
+                                  />
+                                  {rivalInput && (
+                                      <button 
+                                          onClick={() => setRivalInput('')}
+                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                                      >
+                                          <X className="w-3 h-3" />
+                                      </button>
+                                  )}
+                              </div>
+                              <button 
+                                  onClick={handleAddRival}
+                                  className="px-3 py-1.5 bg-isuzu-red hover:bg-red-600 text-white rounded text-[10px] font-bold transition-all flex items-center gap-1"
+                              >
+                                  <Plus className="w-3 h-3" /> ADD
+                              </button>
+                          </div>
                       </div>
                       
-                      <div className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1 custom-scrollbar">
-                          {/* Header Row */}
-                          <div className="grid grid-cols-[30px_1fr_60px] gap-2 px-1 sticky top-0 bg-[#080808] z-10 pb-1 border-b border-white/5">
-                              <div className="text-[8px] font-bold text-zinc-600 uppercase">#</div>
-                              <div className="text-[8px] font-bold text-zinc-600 uppercase">Rival</div>
-                              <div className="text-[8px] font-bold text-zinc-600 uppercase text-right">Gap</div>
+                      <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
+                          {/* Active Car (Chosen Team) */}
+                          <div className="flex flex-col gap-1">
+                              <div className="text-[8px] font-bold text-zinc-600 uppercase px-1">Active Car</div>
+                              <div className="flex items-center justify-between bg-isuzu-red/10 rounded p-2 border border-isuzu-red/20">
+                                  <div className="flex items-center gap-2">
+                                      <div className="text-xs font-mono font-black text-isuzu-red">#{activeCar?.number}</div>
+                                      <div className="text-[10px] font-bold text-white">{activeCar?.name}</div>
+                                  </div>
+                                  <div className="text-[10px] font-mono text-zinc-400">REFERENCE</div>
+                              </div>
                           </div>
 
-                          {sortedRivals.map((rival) => (
-                              <div key={rival.id} className="grid grid-cols-[30px_1fr_60px] gap-2 items-center bg-white/5 rounded p-1.5 border border-white/5 hover:bg-white/10 transition-colors">
-                                  {/* Car Number */}
-                                  <div className="text-[10px] font-mono font-bold text-zinc-400">
-                                      {rival.number}
-                                  </div>
-
-                                  {/* Rival Name */}
-                                  <div className="text-[10px] font-bold text-white truncate">
-                                      {rival.name}
-                                  </div>
-
-                                  {/* Gap Display */}
-                                  <div className={`text-right font-mono text-xs font-bold ${rival.isPos ? 'text-red-500' : 'text-green-500'}`}>
-                                      {rival.isPos ? '+' : ''}{rival.gapFormatted}s
-                                  </div>
+                          {/* Comparison Result */}
+                          <div className="flex flex-col gap-1">
+                              <div className="text-[8px] font-bold text-zinc-600 uppercase px-1">Rival Comparison</div>
+                              <div className="space-y-1.5">
+                                  {rivalList.length > 0 ? (
+                                      rivalList.map(num => {
+                                          const rival = rivalData.find(r => r.number === num);
+                                          return (
+                                              <div key={num} className="flex items-center justify-between bg-white/5 rounded p-2 border border-white/10 group animate-in fade-in slide-in-from-top-1 duration-300">
+                                                  <div className="flex items-center gap-2">
+                                                      <button 
+                                                          onClick={() => handleRemoveRival(num)}
+                                                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 text-zinc-500 hover:text-red-500 rounded transition-all"
+                                                      >
+                                                          <X className="w-3 h-3" />
+                                                      </button>
+                                                      <div className="text-xs font-mono font-bold text-zinc-400">#{num}</div>
+                                                      <div className="text-[10px] font-bold text-white">{rival?.name || 'Unknown'}</div>
+                                                  </div>
+                                                  {rival ? (
+                                                      <div className={`text-right font-mono text-sm font-black ${rival.isPos ? 'text-red-500' : 'text-green-500'}`}>
+                                                          {rival.isPos ? '+' : ''}{rival.gapFormatted}s
+                                                      </div>
+                                                  ) : (
+                                                      <div className="text-right text-[10px] text-zinc-600 italic">Not Found</div>
+                                                  )}
+                                              </div>
+                                          );
+                                      })
+                                  ) : (
+                                      <div className="flex flex-col items-center justify-center py-4 bg-white/5 rounded border border-dashed border-white/10">
+                                          <span className="text-[10px] text-zinc-600 italic">
+                                              Enter rival car numbers above to compare
+                                          </span>
+                                      </div>
+                                  )}
                               </div>
-                          ))}
+                          </div>
                       </div>
                   </div>
               );
