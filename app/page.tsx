@@ -162,6 +162,7 @@ const App: React.FC = () => {
                   telemetryData={allCarsTelemetry}
                   onCarSelect={(id) => {
                       setSelectedCarIds([id]);
+                      setFilterSelectedOnly(true);
                       setCurrentView(View.DIRECTOR);
                   }}
                   thresholds={thresholds}

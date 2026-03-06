@@ -227,6 +227,7 @@ const Graph: React.FC<DashboardProps> = ({
   };
 
   const toggleCarSelection = (id: number) => {
+      setFilterSelectedOnly(true);
       if (isCompareMode) {
           if (selectedCarIds.includes(id)) {
               if (selectedCarIds.length > 1) {
