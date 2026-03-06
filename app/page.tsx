@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Sidebar from '@/components/Sidebar';
 import Login from '@/components/Login';
-import { View, Car, Driver, FileItem } from '@/types';
+import { View, Car, Driver, FileItem, CarTelemetry, Thresholds } from '@/types';
 import { INITIAL_FILES } from '@/constants';
 
 const AllSensors = dynamic(() => import('@/components/AllSensors'), { ssr: false });
@@ -16,6 +16,7 @@ const Settings = dynamic(() => import('@/components/Settings'), { ssr: false });
 const FileAndVideo = dynamic(() => import('@/components/FileAndVideo'), { ssr: false });
 const LiveStream = dynamic(() => import('@/components/LiveStream'), { ssr: false });
 const Administration = dynamic(() => import('@/components/Administration'), { ssr: false });
+const OverviewDirector = dynamic(() => import('@/components/OverviewDirector'), { ssr: false });
 
 // Define initial layout here to persist across tab changes
 const DEFAULT_TELEMETRY_LAYOUT = [
@@ -42,24 +43,92 @@ const DEFAULT_TELEMETRY_LAYOUT = [
 ];
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
 
   // Shared State for Fleet/Team
-  const [cars, setCars] = useState<Car[]>([
-      { id: 1, model: 'Isuzu D-Max Raider', number: '04', status: 'Active' },
-      { id: 2, model: 'Isuzu D-Max Proto', number: '12', status: 'Maintenance' },
-  ]);
-  const [drivers, setDrivers] = useState<Driver[]>([
-      { id: 1, name: 'M. Sato', carId: 1, license: 'FIA-A' },
-      { id: 2, name: 'J. Smith', carId: 2, license: 'FIA-B' },
-  ]);
+  const [cars, setCars] = useState<Car[]>(
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i + 1,
+      model: i % 2 === 0 ? 'Isuzu D-Max Raider' : 'Isuzu D-Max Proto',
+      number: (i + 1).toString().padStart(2, '0'),
+      status: i % 5 === 0 ? 'Maintenance' : 'Active'
+    }))
+  );
+  const [drivers, setDrivers] = useState<Driver[]>(
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i + 1,
+      name: `Driver ${i + 1}`,
+      carId: i + 1,
+      license: i % 3 === 0 ? 'FIA-A' : 'FIA-B'
+    }))
+  );
 
   // Shared State for Files (Files Tab + Telemetry Recording)
   const [files, setFiles] = useState<FileItem[]>(INITIAL_FILES);
 
   // Persisted Layout State
   const [telemetryLayout, setTelemetryLayout] = useState(DEFAULT_TELEMETRY_LAYOUT);
+
+  // Shared Telemetry State
+  const [allCarsTelemetry, setAllCarsTelemetry] = React.useState<CarTelemetry[]>([]);
+  const tickRef = React.useRef(0);
+  const [isPaused, setIsPaused] = React.useState(false);
+
+  // Director Selection State
+  const [selectedCarIds, setSelectedCarIds] = useState<number[]>([1]);
+  const [filterSelectedOnly, setFilterSelectedOnly] = useState(false);
+
+  // Shared Thresholds State
+  const [thresholds, setThresholds] = React.useState<Thresholds>({
+      speed: 240,
+      rpm: 11500,
+      fuelFlow: 98,
+      fuelPressure: 4.5,
+      throttle: 95,
+      ignitionTiming: 40,
+      airflow: 440,
+      lambda: 1.02,
+      sensitivity: 8
+  });
+
+  // Team Filter Logic
+  const teamCarIds = [1, 2];
+  const teamCars = cars.filter(c => teamCarIds.includes(c.id));
+  const teamDrivers = drivers.filter(d => teamCarIds.includes(d.carId));
+
+  // Telemetry Generation Logic (Lifted from DirectorGraph)
+  React.useEffect(() => {
+      const generateAllCarsTelemetry = (cars: Car[], tick: number): CarTelemetry[] => {
+          return cars.map(car => {
+              const t = tick + (car.id * 100);
+              return {
+                  id: car.id,
+                  number: car.number,
+                  lap: 16,
+                  speed: Math.max(0, 200 + Math.sin(t * 0.1) * 50 + (Math.random() * 5)),
+                  rpm: Math.max(0, 10000 + Math.sin(t * 0.2) * 2000),
+                  fuelFlow: Math.max(0, 90 + Math.random() * 10),
+                  fuelPressure: Math.max(0, 4.0 + Math.sin(t * 0.05) * 0.5 + (Math.random() * 0.1)),
+                  throttle: Math.max(0, 50 + Math.sin(t * 0.3) * 50),
+                  ignitionTiming: 20 + Math.sin(t * 0.1) * 10 + (Math.random() * 2),
+                  lambda: 0.98 + Math.random() * 0.04,
+                  airflow: Math.max(0, 400 + Math.random() * 50),
+                  distance: (tick * 50) % 5000,
+                  lapProgress: (tick * 5) % 100,
+              };
+          });
+      };
+
+      const interval = setInterval(() => {
+          if (!isPaused) {
+              tickRef.current += 0.01;
+              const t = tickRef.current;
+              setAllCarsTelemetry(generateAllCarsTelemetry(cars, t));
+          }
+      }, 10);
+      return () => clearInterval(interval);
+  }, [cars, isPaused]);
 
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
@@ -68,17 +137,37 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case View.DASHBOARD:
-        return <AllSensors cars={cars} drivers={drivers} />;
+        return <AllSensors cars={teamCars} drivers={teamDrivers} />;
       case View.TELEMETRY:
         return <Engineering 
-                  cars={cars} 
-                  drivers={drivers} 
+                  cars={teamCars} 
+                  drivers={teamDrivers} 
                   setFiles={setFiles} 
                   layout={telemetryLayout}
                   onLayoutChange={setTelemetryLayout}
                />;
       case View.DIRECTOR:
-        return <DirectorGraph cars={cars} />;
+        return <DirectorGraph 
+                  cars={cars} 
+                  telemetryData={allCarsTelemetry} 
+                  selectedCarIds={selectedCarIds}
+                  setSelectedCarIds={setSelectedCarIds}
+                  filterSelectedOnly={filterSelectedOnly}
+                  setFilterSelectedOnly={setFilterSelectedOnly}
+               />;
+      case View.OVERVIEW_DIRECTOR:
+        return <OverviewDirector 
+                  cars={cars} 
+                  drivers={drivers} 
+                  telemetryData={allCarsTelemetry}
+                  onCarSelect={(id) => {
+                      setSelectedCarIds([id]);
+                      setCurrentView(View.DIRECTOR);
+                  }}
+                  thresholds={thresholds}
+                  layout={telemetryLayout}
+                  onLayoutChange={setTelemetryLayout}
+               />;
       case View.KANBAN:
         return <Task />;
       case View.CHAT:
@@ -86,13 +175,13 @@ const App: React.FC = () => {
       case View.FILES:
         return <FileAndVideo files={files} setFiles={setFiles} />;
       case View.LIVE:
-        return <LiveStream cars={cars} drivers={drivers} />;
+        return <LiveStream cars={teamCars} drivers={teamDrivers} />;
       case View.ADMINISTRATION:
-        return <Administration cars={cars} setCars={setCars} drivers={drivers} setDrivers={setDrivers} />;
+        return <Administration cars={teamCars} setCars={setCars} drivers={teamDrivers} setDrivers={setDrivers} />;
       case View.SETTINGS:
-        return <Settings cars={cars} setCars={setCars} drivers={drivers} setDrivers={setDrivers} />;
+        return <Settings cars={teamCars} setCars={setCars} drivers={teamDrivers} setDrivers={setDrivers} />;
       default:
-        return <AllSensors cars={cars} drivers={drivers} />;
+        return <AllSensors cars={teamCars} drivers={teamDrivers} />;
     }
   };
 
@@ -112,6 +201,7 @@ const App: React.FC = () => {
             currentView={currentView} 
             onChangeView={setCurrentView} 
             onLogout={() => setIsAuthenticated(false)} 
+            isAdmin={true}
         />
         
         <main className="flex-1 relative z-10 flex flex-col overflow-hidden">

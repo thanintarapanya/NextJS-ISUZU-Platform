@@ -718,11 +718,12 @@ const Graph: React.FC<DashboardProps> = ({
                                     circuitName="Buriram International Circuit"
                                     activeFlag={raceStatus === 'GREEN' ? null : { turn: 'T3', type: raceStatus === 'SC' ? 'YELLOW' : raceStatus }}
                                     mainCarProgress={(currentSnapshot[`lapProgress_${selectedCarIds[0]}`] || 0) / 100}
-                                    rivals={displayCars.filter(c => c.id !== selectedCarIds[0]).map(c => ({
+                                    rivals={initialCars.filter(c => c.id !== selectedCarIds[0]).map(c => ({
                                         id: c.id,
                                         name: c.number,
-                                        color: '#fff',
-                                        progress: (currentSnapshot[`lapProgress_${c.id}`] || 0) / 100
+                                        color: selectedCarIds.includes(c.id) ? '#3b82f6' : '#fff',
+                                        progress: (currentSnapshot[`lapProgress_${c.id}`] || 0) / 100,
+                                        isSelected: selectedCarIds.includes(c.id)
                                     }))}
                                     className="h-full border-none bg-transparent"
                                 />

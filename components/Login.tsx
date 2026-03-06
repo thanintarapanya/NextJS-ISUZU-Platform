@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { ChevronRight, Lock } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (isAdmin: boolean) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     // Simulate auth delay for effect
     setTimeout(() => {
-        onLogin();
+        const isAdmin = email.toLowerCase() === 'admin@isuzu.com';
+        onLogin(isAdmin);
     }, 1500);
   };
 
@@ -51,6 +53,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <input 
                             type="email" 
                             placeholder="Race ID / Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-isuzu-red/50 focus:bg-white/10 transition-all"
                         />
                     </div>

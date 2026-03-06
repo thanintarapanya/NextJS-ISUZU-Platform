@@ -7,7 +7,8 @@ export enum View {
   FILES = 'FILES',
   LIVE = 'LIVE',
   SETTINGS = 'SETTINGS',
-  ADMINISTRATION = 'ADMINISTRATION'
+  ADMINISTRATION = 'ADMINISTRATION',
+  OVERVIEW_DIRECTOR = 'OVERVIEW_DIRECTOR'
 }
 
 export interface TelemetryPoint {
@@ -95,4 +96,16 @@ export interface FileItem {
     type: 'folder' | 'csv' | 'mp4';
     size?: string;
     date: string;
+}
+
+export interface Thresholds {
+    speed: number;
+    rpm: number;
+    fuelFlow: number;
+    fuelPressure: number;
+    throttle: number;
+    ignitionTiming: number;
+    airflow: number;
+    lambda: number;
+    sensitivity: number;
 }

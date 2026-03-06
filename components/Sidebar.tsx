@@ -1,26 +1,30 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Activity, KanbanSquare, MessageSquare, Settings, LogOut, ChevronLeft, ChevronRight, Menu, FolderOpen, Tv2, Eye, Crown } from 'lucide-react';
+import { LayoutDashboard, Activity, KanbanSquare, MessageSquare, Settings, LogOut, ChevronLeft, ChevronRight, Menu, FolderOpen, Tv2, Eye, Crown, Shield } from 'lucide-react';
 import { View } from '../types';
 
 interface SidebarProps {
   currentView: View;
   onChangeView: (view: View) => void;
   onLogout: () => void;
+  isAdmin: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onLogout, isAdmin }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
     { view: View.DASHBOARD, icon: LayoutDashboard, label: 'All Sensors' },
     { view: View.TELEMETRY, icon: Activity, label: 'Engineering' },
     { view: View.LIVE, icon: Tv2, label: 'Live Stream' },
-    { view: View.DIRECTOR, icon: Eye, label: 'Director Graph' },
+    { view: View.OVERVIEW_DIRECTOR, icon: Shield, label: 'Overview Director', adminOnly: true },
+    { view: View.DIRECTOR, icon: Eye, label: 'Director Graph', adminOnly: true },
     { view: View.FILES, icon: FolderOpen, label: 'File&Video' },
     { view: View.KANBAN, icon: KanbanSquare, label: 'Task' },
-    { view: View.ADMINISTRATION, icon: Crown, label: 'Administration' },
+    { view: View.ADMINISTRATION, icon: Crown, label: 'Administration', adminOnly: true },
     { view: View.CHAT, icon: MessageSquare, label: 'Team Comms', disabled: true },
   ];
+
+  const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <div 
@@ -53,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onLogout }
 
       {/* Navigation */}
       <nav className="flex-1 py-6 px-3 space-y-2">
-        {navItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <button
             key={item.view}
             onClick={() => !item.disabled && onChangeView(item.view)}

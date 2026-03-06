@@ -6,7 +6,7 @@ interface MapWidgetProps {
     circuitName?: string;
     activeFlag?: { turn: string; type: 'YELLOW' | 'RED' | 'GREEN' } | null;
     mainCarProgress?: number; // 0 to 1
-    rivals?: { id: number | string; name: string; color: string; progress: number }[];
+    rivals?: { id: number | string; name: string; color: string; progress: number; isSelected?: boolean }[];
 }
 
 const TRACK_TURNS = [
@@ -33,7 +33,7 @@ const MapWidget: React.FC<MapWidgetProps> = ({
 }) => {
     const trackPathRef = useRef<SVGPathElement>(null);
     const [carMapPos, setCarMapPos] = useState({ x: 100, y: 300 });
-    const [rivalPositions, setRivalPositions] = useState<{id: number | string, x: number, y: number, color: string, name: string}[]>([]);
+    const [rivalPositions, setRivalPositions] = useState<{id: number | string, x: number, y: number, color: string, name: string, isSelected?: boolean}[]>([]);
 
     // Calculate positions based on progress
     useEffect(() => {
@@ -55,7 +55,8 @@ const MapWidget: React.FC<MapWidgetProps> = ({
                     x: rivalPoint.x,
                     y: rivalPoint.y,
                     color: rival.color,
-                    name: rival.name
+                    name: rival.name,
+                    isSelected: rival.isSelected
                 };
             });
             setRivalPositions(newRivalPositions);
@@ -158,13 +159,18 @@ const MapWidget: React.FC<MapWidgetProps> = ({
                     {/* Rivals Markers */}
                     {rivalPositions.map(pos => (
                         <g key={pos.id} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {/* Arrow for selected rivals */}
+                            {pos.isSelected && (
+                                <path d="M -8 -25 L 8 -25 L 0 -8 Z" fill={pos.color} className="animate-bounce-arrow" />
+                            )}
+                            
                             {/* Label Box */}
                             <g transform="translate(8, -8)">
                                 <rect x="0" y="0" width="28" height="12" rx="2" fill="black" stroke={pos.color} strokeWidth="1" />
                                 <text x="14" y="9" textAnchor="middle" className="fill-white text-[8px] font-bold font-mono select-none">{pos.name}</text>
                             </g>
                             {/* Car Dot */}
-                            <circle r="4" fill={pos.color} className="stroke-white stroke-1 shadow-lg" />
+                            <circle r={pos.isSelected ? "6" : "4"} fill={pos.color} className="stroke-white stroke-1 shadow-lg" />
                         </g>
                     ))}
 

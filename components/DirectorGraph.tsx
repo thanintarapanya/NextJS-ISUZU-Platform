@@ -4,46 +4,21 @@ import Graph from './Graph';
 
 interface DirectorDashboardProps {
     cars: Car[];
+    telemetryData: CarTelemetry[];
+    selectedCarIds: number[];
+    setSelectedCarIds: React.Dispatch<React.SetStateAction<number[]>>;
+    filterSelectedOnly: boolean;
+    setFilterSelectedOnly: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const generateAllCarsTelemetry = (cars: Car[], tick: number): CarTelemetry[] => {
-    return cars.map(car => {
-        const t = tick + (car.id * 100);
-        return {
-            id: car.id,
-            number: car.number,
-            lap: 16,
-            speed: Math.max(0, 200 + Math.sin(t * 0.1) * 50 + (Math.random() * 5)),
-            rpm: Math.max(0, 10000 + Math.sin(t * 0.2) * 2000),
-            fuelFlow: Math.max(0, 90 + Math.random() * 10),
-            fuelPressure: Math.max(0, 4.0 + Math.sin(t * 0.05) * 0.5 + (Math.random() * 0.1)),
-            throttle: Math.max(0, 50 + Math.sin(t * 0.3) * 50),
-            ignitionTiming: 20 + Math.sin(t * 0.1) * 10 + (Math.random() * 2),
-            lambda: 0.98 + Math.random() * 0.04,
-            airflow: Math.max(0, 400 + Math.random() * 50),
-            distance: (tick * 50) % 5000,
-            lapProgress: (tick * 5) % 100,
-        };
-    });
-};
-
-const DirectorGraph: React.FC<DirectorDashboardProps> = ({ cars }) => {
-    const [selectedCarIds, setSelectedCarIds] = useState<number[]>([]);
-    const [filterSelectedOnly, setFilterSelectedOnly] = useState(false);
-    const [allCarsTelemetry, setAllCarsTelemetry] = useState<CarTelemetry[]>([]);
-    const tickRef = useRef(0);
-    const [isPaused, setIsPaused] = useState(false);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (!isPaused) {
-                tickRef.current += 0.01;
-                const t = tickRef.current;
-                setAllCarsTelemetry(generateAllCarsTelemetry(cars, t));
-            }
-        }, 10);
-        return () => clearInterval(interval);
-    }, [cars, isPaused]);
+const DirectorGraph: React.FC<DirectorDashboardProps> = ({ 
+    cars, 
+    telemetryData,
+    selectedCarIds,
+    setSelectedCarIds,
+    filterSelectedOnly,
+    setFilterSelectedOnly
+}) => {
 
     return (
         <div className="flex-1 h-full min-h-0 relative flex flex-col">
@@ -61,7 +36,7 @@ const DirectorGraph: React.FC<DirectorDashboardProps> = ({ cars }) => {
             <div className="flex-1 min-h-0 relative">
                 <Graph 
                     cars={cars}
-                    telemetryData={allCarsTelemetry}
+                    telemetryData={telemetryData}
                     selectedCarIds={selectedCarIds}
                     setSelectedCarIds={setSelectedCarIds}
                     filterSelectedOnly={filterSelectedOnly}
