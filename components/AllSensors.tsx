@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-// Force sync
 import { AlertTriangle, Database, Car as CarIcon, LayoutGrid, Check, ChevronDown, Wifi } from 'lucide-react';
 import { Responsive } from 'react-grid-layout';
 import * as ReactGridLayout from 'react-grid-layout';
